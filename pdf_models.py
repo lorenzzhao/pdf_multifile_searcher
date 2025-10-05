@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Small data models for the PDF multifile searcher.
 
 This module contains lightweight dataclasses used across the project so

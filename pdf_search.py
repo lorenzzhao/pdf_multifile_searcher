@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Search utilities for the PDF multifile searcher.
 
 Provides a standalone function `search_pdfs` that searches a directory tree for
