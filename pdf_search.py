@@ -20,50 +20,65 @@ def search_pdfs(working_directory: str, search_pattern: str) -> Dict[str, List[M
 
     Returns a dict mapping absolute file paths to lists of Match objects.
     """
+    import concurrent.futures
     results: Dict[str, List[Match]] = {}
-    match_id = 0
+    match_id_counter = [0]  # mutable counter for unique match IDs
 
+    # Gather all PDF file paths first
+    pdf_files = []
     for root, dirs, files in os.walk(working_directory):
         for filename in files:
-            if not filename.lower().endswith('.pdf'):
-                continue
-            pdf_file_path = os.path.join(root, filename)
+            if filename.lower().endswith('.pdf'):
+                pdf_files.append(os.path.join(root, filename))
+
+    def process_pdf(pdf_file_path):
+        local_results = []
+        try:
+            pdf_document = fitz.open(pdf_file_path)
+        except Exception:
+            return pdf_file_path, local_results
+        for page_number in range(pdf_document.page_count):
+            page = pdf_document[page_number]
             try:
-                pdf_document = fitz.open(pdf_file_path)
+                search_results_on_current_page = page.search_for(search_pattern)
             except Exception:
-                # Skip files that cannot be opened as PDFs
+                search_results_on_current_page = []
+            if not search_results_on_current_page:
                 continue
-
-            # iterate through pages of the current file
-            for page_number in range(pdf_document.page_count):
-                page = pdf_document[page_number]
+            for mr in search_results_on_current_page:
+                match_height = mr.y1 - mr.y0
+                page_h = page.rect.height
+                pad_y = max(5, match_height * 0.5)
+                y0 = max(0, mr.y0 - pad_y)
+                y1 = min(page_h, mr.y1 + pad_y)
+                context_location = fitz.Rect(mr.x0 - 50, y0, mr.x1 + 50, y1)
                 try:
-                    search_results_on_current_page = page.search_for(search_pattern)
+                    context_text = page.get_textbox(context_location)
                 except Exception:
-                    search_results_on_current_page = []
+                    context_text = ""
+                # Thread-safe match_id assignment
+                match_id = None
+                # Use a lock to increment the counter safely
+                if hasattr(process_pdf, 'lock'):
+                    with process_pdf.lock:
+                        match_id = match_id_counter[0]
+                        match_id_counter[0] += 1
+                else:
+                    match_id = match_id_counter[0]
+                    match_id_counter[0] += 1
+                local_results.append(Match(match_id, page_number, mr, context_location, context_text))
+        pdf_document.close()
+        return pdf_file_path, local_results
 
-                if not search_results_on_current_page:
-                    continue
+    # Add a lock for thread-safe match_id increment
+    import threading
+    process_pdf.lock = threading.Lock()
 
-                if pdf_file_path not in results:
-                    results[pdf_file_path] = []
-
-                for mr in search_results_on_current_page:
-                    match_height = mr.y1 - mr.y0
-                    page_h = page.rect.height
-                    pad_y = max(5, match_height * 0.5)
-                    y0 = max(0, mr.y0 - pad_y)
-                    y1 = min(page_h, mr.y1 + pad_y)
-                    context_location = fitz.Rect(mr.x0 - 50, y0, mr.x1 + 50, y1)
-
-                    try:
-                        context_text = page.get_textbox(context_location)
-                    except Exception:
-                        context_text = ""
-
-                    results[pdf_file_path].append(
-                        Match(match_id, page_number, mr, context_location, context_text)
-                    )
-                    match_id += 1
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_to_pdf = {executor.submit(process_pdf, pdf_file): pdf_file for pdf_file in pdf_files}
+        for future in concurrent.futures.as_completed(future_to_pdf):
+            pdf_file_path, matches = future.result()
+            if matches:
+                results[pdf_file_path] = matches
 
     return results
