@@ -45,7 +45,8 @@ class PDFMultifileSearch:
         # Create a "File" menu
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(label="Open", command=self.open_pdf)
-        file_menu.add_command(label="Select Folder", command=self.select_directory)
+        file_menu.add_command(label="Add search folder", command=self.add_search_folder)
+        file_menu.add_command(label="Clear search folders", command=self.clear_search_folders)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=exit_app)
 
@@ -191,11 +192,11 @@ class PDFMultifileSearch:
                 item_values = self.search_result_tree.item(selected_item, "values")
                 page_number = int(item_values[1])
                 match_id = int(item_values[2])
-                print(f"Subitem clicked: file_path = {file_path}, item_values = {item_values}, parent_item_values = {parent_item_values}")
+                #print(f"Subitem clicked: file_path = {file_path}, item_values = {item_values}, parent_item_values = {parent_item_values}")
             else:
                 file_path = self.search_result_tree.item(selected_item, "text")
                 item_values = self.search_result_tree.item(selected_item, "values")
-                print(f"Mainitem clicked: file_path = {file_path}, item_values = {item_values}")
+                #print(f"Mainitem clicked: file_path = {file_path}, item_values = {item_values}")
 
             self.load_pdf(file_path)
             if page_number:
@@ -250,12 +251,10 @@ class PDFMultifileSearch:
         if hasattr(self, 'loaded_pdf_document'):
             self.show_page(self.loaded_pdf_document.load_page(self.current_page))
 
-    def select_directory(self):
+    def add_search_folder(self):
         self.working_directory = filedialog.askdirectory()
-        # Refresh the folder tree to show the newly selected working directory
+        # Refresh the folder tree to show the newly added working directory
         # Clear existing items
-        for item in self.folder_tree.get_children():
-            self.folder_tree.delete(item)
         if self.working_directory:
             top_node = self.folder_tree.insert("", "end", text=self.working_directory, open=False, values=(self.working_directory,))
             try:
@@ -263,6 +262,13 @@ class PDFMultifileSearch:
             except Exception:
                 pass
             # keep a fixed visible height; scrollbar will be used if needed
+        self.show_working_directory()
+
+    def clear_search_folders(self):
+        # Refresh the folder tree to show the newly selected working directory
+        # Clear existing items
+        for item in self.folder_tree.get_children():
+            self.folder_tree.delete(item)
         self.show_working_directory()
 
     def show_working_directory(self):
@@ -345,6 +351,10 @@ class PDFMultifileSearch:
         self.search_results.clear()
 
         search_pattern = self.pattern_entry.get()
+        # Only run search if working_directory is a valid string
+        if not isinstance(self.working_directory, str) or not self.working_directory:
+            #print("No search folder selected. Please add a folder before searching.")
+            return
         try:
             found = search_pdfs(self.working_directory, search_pattern)
         except Exception as e:
