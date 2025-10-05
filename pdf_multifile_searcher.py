@@ -24,11 +24,19 @@ except Exception:
 
 
 class PDFMultifileSearch:
+    
+    def _on_folder_tree_delete(self, event):
+        selected = self.folder_tree.selection()
+        for node in selected:
+            parent = self.folder_tree.parent(node)
+            # Only remove top-level nodes (parent is root)
+            if not parent:
+                self.folder_tree.delete(node)
 
     def __init__(self, tk_root, directories, search_pattern):
         self.working_directory = os.getcwd()
         self.tk_root = tk_root
-        self.tk_root.title("PDF multifile search")
+        self.tk_root.title("PDF Multifile Search")
         window_width, window_height = 1200, 800
         window_x_position, window_y_position = 200, 100
         initial_sash_position = 400
@@ -78,6 +86,8 @@ class PDFMultifileSearch:
         # Create a frame to contain the folder tree and its vertical scrollbar.
         self.folder_frame = tk.Frame(self.search_pane)
         self.folder_tree = ttk.Treeview(self.folder_frame)
+        # Bind DEL key to remove top-level folder nodes
+        self.folder_tree.bind('<Delete>', self._on_folder_tree_delete)
         # Create simple icons for folder and PDF file nodes. Keep references
         # on the instance to avoid garbage collection.
         try:
@@ -253,10 +263,9 @@ class PDFMultifileSearch:
 
     def add_search_folder(self):
         self.working_directory = filedialog.askdirectory()
-        # Refresh the folder tree to show the newly added working directory
-        # Clear existing items
+        # Add the selected directory as a new top-level node with folder icon
         if self.working_directory:
-            top_node = self.folder_tree.insert("", "end", text=self.working_directory, open=False, values=(self.working_directory,))
+            top_node = self.folder_tree.insert("", "end", text=self.working_directory, open=False, image=self._folder_icon, values=(self.working_directory,))
             try:
                 self._populate_folder_tree(top_node, self.working_directory)
             except Exception:
