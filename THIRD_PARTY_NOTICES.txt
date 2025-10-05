@@ -1,0 +1,39 @@
+Third-party dependency notices
+================================
+
+This project depends on the following notable third-party packages. This
+file is a short, non-exhaustive notice intended to help you review license
+compatibility before distribution. Always refer to the upstream project
+pages for the authoritative license texts.
+
+1) PyMuPDF (Python bindings for MuPDF)
+   - Purpose: PDF parsing, search, rendering
+   - Project: https://pymupdf.readthedocs.io/ and https://pypi.org/project/PyMuPDF/
+   - License: AGPL-3.0 (Affero GPL) OR commercial license from Artifex Software
+   - Notes: PyMuPDF's dual licensing means that using it in distributed
+     software can impose AGPL obligations unless a commercial license is
+     obtained. If you intend to distribute this application together with
+     PyMuPDF or make it available as a network service, consult the PyMuPDF
+     licensing terms and, if necessary, contact Artifex for a commercial
+     license.
+
+2) tkinter (Tk interface for Python)
+   - Purpose: GUI toolkit used by the project
+   - Project: https://docs.python.org/3/library/tkinter.html
+   - License: Typically follows the Python Software Foundation License for
+     CPython and the TCL/TK licenses for the underlying toolkit. Check your
+     platform packaging for details. tkinter itself is part of the Python
+     standard library.
+
+3) (optional) fontTools, pytesseract, PIL/Pillow
+   - Purpose: optional features for fonts and OCR if used
+   - Licenses: fontTools (MIT), Pillow (PIL) (PIL fork; HPND or Pillow license),
+     Tesseract OCR (Apache 2.0). Confirm each if you enable those features.
+
+Additional dependencies may be present in your environment (for example if
+you install optional extras). Always check installed packages and their
+licenses before redistribution.
+
+If you need a formal, machine-readable dependency manifest or license
+bundling (for compliance), I can generate a `requirements.txt` and collect
+the license texts automatically.
