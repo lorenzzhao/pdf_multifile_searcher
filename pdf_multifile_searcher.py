@@ -176,6 +176,14 @@ class PDFMultifileSearch:
                                        width=int(initial_sash_position * (column_weights[1] / column_weights_sum)))
         self.search_result_tree.column("page_number", width=40, stretch=False)
         self.search_result_tree.column("match_id", width=40, stretch=False)
+        # Store full paths mapping for search results (display_text -> full_path)
+        self.search_result_paths = {}
+        # Track last column width to detect changes
+        self._last_file_column_width = self.search_result_tree.column("#0", "width")
+        # Bind column resize event
+        self.search_result_tree.bind("<ButtonRelease-1>", self._on_column_resize)
+        # Schedule periodic check for column width changes
+        self._schedule_column_width_check()
         # Fill content to the viewer pane
         self.canvas = tk.Canvas(self.viewer_pane, bg="grey")
         self.canvas.pack(fill=tk.BOTH, expand=True)
@@ -190,6 +198,65 @@ class PDFMultifileSearch:
 
         self.paned_window.sash_place(index=0, x=initial_sash_position, y=0)
 
+    def _schedule_column_width_check(self):
+        """Schedule periodic check for column width changes."""
+        self._check_column_width_change()
+        # Schedule next check in 100ms
+        self.tk_root.after(100, self._schedule_column_width_check)
+
+    def _check_column_width_change(self):
+        """Check if the file column width has changed and update display if needed."""
+        try:
+            current_width = self.search_result_tree.column("#0", "width")
+            if current_width != self._last_file_column_width:
+                self._last_file_column_width = current_width
+                self._update_file_path_displays()
+        except Exception:
+            # Ignore errors (e.g., if widget is destroyed)
+            pass
+
+    def _on_column_resize(self, event):
+        """Handle column resize event."""
+        # Schedule update after a short delay to allow resize to complete
+        self.tk_root.after(50, self._check_column_width_change)
+
+    def _update_file_path_displays(self):
+        """Update all file path displays in the search result tree based on current column width."""
+        if not self.search_results:
+            return
+        
+        file_column_width = self.search_result_tree.column("#0", "width")
+        
+        # Iterate through all top-level items (file paths)
+        for item in self.search_result_tree.get_children():
+            item_values = self.search_result_tree.item(item, "values")
+            if item_values and len(item_values) > 0:
+                full_path = item_values[0]
+                # Update the displayed text with newly shortened path
+                display_path = self.shorten_path_for_width(full_path, file_column_width)
+                self.search_result_tree.item(item, text=display_path)
+
+    def shorten_path_for_width(self, file_path, column_width):
+        """Shorten a file path to fit within the given column width.
+        
+        The path is shortened in the middle with '...' to show both the 
+        beginning and end of the path.
+        """
+        # Estimate character width (rough approximation: column_width / 7 pixels per char)
+        # This is a rough estimate and may need adjustment based on font
+        max_chars = max(10, column_width // 7)
+        
+        if len(file_path) <= max_chars:
+            return file_path
+        
+        # Calculate how many characters to keep from start and end
+        # Reserve 3 characters for '...'
+        chars_for_ends = max_chars - 3
+        start_chars = chars_for_ends // 2
+        end_chars = chars_for_ends - start_chars
+        
+        return f"{file_path[:start_chars]}...{file_path[-end_chars:]}"
+
     def on_treeview_select(self, event):
         selected_item = self.search_result_tree.selection()
         if selected_item:
@@ -197,15 +264,25 @@ class PDFMultifileSearch:
             match_id = None
             parent_item = self.search_result_tree.parent(selected_item)
             if parent_item:
-                file_path = self.search_result_tree.item(parent_item, "text")
+                # Get the full file path from the parent item's values
                 parent_item_values = self.search_result_tree.item(parent_item, "values")
+                if parent_item_values and len(parent_item_values) > 0:
+                    file_path = parent_item_values[0]  # Full path stored in values
+                else:
+                    # Fallback to text if values not found
+                    file_path = self.search_result_tree.item(parent_item, "text")
                 item_values = self.search_result_tree.item(selected_item, "values")
                 page_number = int(item_values[1])
                 match_id = int(item_values[2])
                 #print(f"Subitem clicked: file_path = {file_path}, item_values = {item_values}, parent_item_values = {parent_item_values}")
             else:
-                file_path = self.search_result_tree.item(selected_item, "text")
+                # Get the full file path from the item's values
                 item_values = self.search_result_tree.item(selected_item, "values")
+                if item_values and len(item_values) > 0:
+                    file_path = item_values[0]  # Full path stored in values
+                else:
+                    # Fallback to text if values not found
+                    file_path = self.search_result_tree.item(selected_item, "text")
                 #print(f"Mainitem clicked: file_path = {file_path}, item_values = {item_values}")
 
             self.load_pdf(file_path)
@@ -260,6 +337,8 @@ class PDFMultifileSearch:
             self.paned_window.sash_place(0, new_sash_position, 0)
         if hasattr(self, 'loaded_pdf_document'):
             self.show_page(self.loaded_pdf_document.load_page(self.current_page))
+        # Check if column width changed after sash drag
+        self.tk_root.after(100, self._check_column_width_change)
 
     def add_search_folder(self):
         self.working_directory = filedialog.askdirectory()
@@ -358,6 +437,7 @@ class PDFMultifileSearch:
         # behaviour: populate `self.search_results` and the result tree.
         self.search_result_tree.delete(*self.search_result_tree.get_children())
         self.search_results.clear()
+        self.search_result_paths.clear()
 
         search_pattern = self.pattern_entry.get()
         # Only run search if working_directory is a valid string
@@ -373,8 +453,14 @@ class PDFMultifileSearch:
         # Copy results into the instance's search_results and populate tree
         self.search_results = found
 
+        # Get the current column width for the File column
+        file_column_width = self.search_result_tree.column("#0", "width")
+        
         for file_path, matches in self.search_results.items():
-            main_item = self.search_result_tree.insert("", "end", text=file_path)
+            # Shorten the path for display based on column width
+            display_path = self.shorten_path_for_width(file_path, file_column_width)
+            # Store full path in values tuple, display shortened path as text
+            main_item = self.search_result_tree.insert("", "end", text=display_path, values=(file_path,))
             for match in matches:
                 self.search_result_tree.insert(main_item, "end", text="", values=(match.context
                                                                                   , match.page_number

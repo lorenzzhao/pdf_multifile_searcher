@@ -23,9 +23,3 @@ or users under AGPL-3.0. If this is incompatible with your distribution goals,
 you should either obtain a commercial license for PyMuPDF or replace it with
 an alternative library under a compatible license.
 
-Notes:
-- The search logic was preserved; the `search_pdfs` function returns a mapping
-  of file paths to lists of `Match` objects. This makes it easier to test and
-  reuse the search functionality from other scripts.
-- The modules use fallback imports so they can be executed both as a script and
-  imported as modules during quick tests.
