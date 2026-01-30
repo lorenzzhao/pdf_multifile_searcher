@@ -9,9 +9,10 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 import os
+import configparser
 
 #from PIL.ImageOps import expand
-
+CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.pdf_multifile_searcher_config.ini')
 
 try:
     # When used as a package
@@ -25,14 +26,6 @@ except Exception:
 
 class PDFMultifileSearch:
     
-    def _on_folder_tree_delete(self, event):
-        selected = self.folder_tree.selection()
-        for node in selected:
-            parent = self.folder_tree.parent(node)
-            # Only remove top-level nodes (parent is root)
-            if not parent:
-                self.folder_tree.delete(node)
-
     def __init__(self, tk_root, directories, search_pattern):
         self.working_directory = os.getcwd()
         self.tk_root = tk_root
@@ -197,6 +190,90 @@ class PDFMultifileSearch:
         self.tk_root.update()
 
         self.paned_window.sash_place(index=0, x=initial_sash_position, y=0)
+        self.load_configuration()
+
+    def save_configuration(self):
+        """Save the current configuration to a file."""
+        config = configparser.ConfigParser()
+
+        # Save the folders in the folder_tree
+        folders = []
+        for item in self.folder_tree.get_children():
+            values = self.folder_tree.item(item, 'values')
+            if values and len(values) > 0:
+                folders.append(values[0])
+
+        config['Folders'] = {'folders': ','.join(folders)}
+
+        # Save the search pattern
+        config['Search'] = {'pattern': self.pattern_entry.get()}
+
+        # Save the window dimensions and position
+        config['Window'] = {
+            'width': str(self.tk_root.winfo_width()),
+            'height': str(self.tk_root.winfo_height()),
+            'x': str(self.tk_root.winfo_x()),
+            'y': str(self.tk_root.winfo_y())
+            }
+
+        # Save the treeview column widths
+        config['Treeview'] = {
+            'file_column_width': str(self.search_result_tree.column("#0", "width")),
+            'context_column_width': str(self.search_result_tree.column("context", "width"))
+        }
+
+        # Save the initial sash position
+        sash_position = self.paned_window.sash_coord(0)
+        if sash_position:
+            config['Sash'] = {'position': str(sash_position[0])}
+
+        # Write the configuration to the file
+        with open(CONFIG_FILE, 'w') as configfile:
+            config.write(configfile)
+
+    def load_configuration(self):
+        """Load the configuration from a file."""
+        config = configparser.ConfigParser()
+
+        # Check if the configuration file exists
+        if os.path.exists(CONFIG_FILE):
+            config.read(CONFIG_FILE)
+
+            # Load the folders in the folder_tree
+            if 'Folders' in config and 'folders' in config['Folders']:
+                folders = config['Folders']['folders'].split(',')
+                for folder in folders:
+                    if folder:
+                        top_node = self.folder_tree.insert("", "end", text=folder, open=False, image=self._folder_icon, values=(folder,))
+                        try:
+                            self._populate_folder_tree(top_node, folder)
+                        except Exception:
+                            pass
+
+        # Load the search pattern
+        if 'Search' in config and 'pattern' in config['Search']:
+            self.pattern_entry.delete(0, tk.END)
+            self.pattern_entry.insert(0, config['Search']['pattern'])
+
+        # Load the window dimensions and position
+        if 'Window' in config:
+            window_width = config['Window'].get('width', '1200')
+            window_height = config['Window'].get('height', '800')
+            window_x = config['Window'].get('x', '200')
+            window_y = config['Window'].get('y', '100')
+            self.tk_root.geometry(f"{window_width}x{window_height}+{window_x}+{window_y}")
+
+        # Load the treeview column widths
+        if 'Treeview' in config:
+            file_column_width = config['Treeview'].get('file_column_width', '200')
+            context_column_width = config['Treeview'].get('context_column_width', '200')
+            self.search_result_tree.column("#0", width=int(file_column_width))
+            self.search_result_tree.column("context", width=int(context_column_width))
+
+        # Load the initial sash position
+        if 'Sash' in config and 'position' in config['Sash']:
+            initial_sash_position = int(config['Sash']['position'])
+            self.paned_window.sash_place(index=0, x=initial_sash_position, y=0)
 
     def _schedule_column_width_check(self):
         """Schedule periodic check for column width changes."""
@@ -220,6 +297,13 @@ class PDFMultifileSearch:
         # Schedule update after a short delay to allow resize to complete
         self.tk_root.after(50, self._check_column_width_change)
 
+    def _on_folder_tree_delete(self, event):
+        selected = self.folder_tree.selection()
+        for node in selected:
+            parent = self.folder_tree.parent(node)
+            # Only remove top-level nodes (parent is root)
+            if not parent:
+                self.folder_tree.delete(node)
     def _update_file_path_displays(self):
         """Update all file path displays in the search result tree based on current column width."""
         if not self.search_results:
@@ -544,6 +628,7 @@ class PDFMultifileSearch:
             self.tk_root.title(f"PDF Viewer - Page {self.current_page + 1}/{self.loaded_pdf_document.page_count}")
 
 def exit_app():
+    pdf_viewer.save_configuration()
     tk_root.destroy()
 
 if __name__ == "__main__":
@@ -554,4 +639,8 @@ if __name__ == "__main__":
 
     tk_root = tk.Tk()
     pdf_viewer = PDFMultifileSearch(tk_root, args.folder, args.pattern)
+
+    # Bind the window's close event to the exit_app function
+    tk_root.protocol("WM_DELETE_WINDOW", exit_app)
+
     tk_root.mainloop()
