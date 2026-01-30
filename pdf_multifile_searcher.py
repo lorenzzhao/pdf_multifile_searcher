@@ -35,6 +35,8 @@ class PDFMultifileSearch:
         initial_sash_position = 400
         self.tk_root.geometry(f"{window_width}x{window_height}+{window_x_position}+{window_y_position}")
 
+        # todo: introduce command line mode that does not store search directories 
+        # and search pattern in the configuration file
         self.search_directories = directories
         # dictionary with one entry per PDF file
         # each entry is a dictionary, whose key is the page number of the match and the
@@ -92,16 +94,7 @@ class PDFMultifileSearch:
             # PhotoImage may fail in some headless environments; fall back to None
             self._folder_icon = None
             self._pdf_icon = None
-        # Determine initial entries for the folder tree. If search_directories
-        # were provided on the command line, show them. Otherwise show the
-        # current working directory as a single entry.
-        initial_dirs = []
-        if self.search_directories:
-            initial_dirs = list(self.search_directories)
-        else:
-            # fallback to current working directory
-            initial_dirs = [self.working_directory]
-
+ 
         # Set a reasonable visible-height (rows) up to 10 lines; the scrollbar
         # will allow access to the remainder when there are many entries.
         # Use a fixed visible height (10 rows) so the tree shows multiple
@@ -114,16 +107,6 @@ class PDFMultifileSearch:
         self.folder_tree.tag_configure("heading", foreground="red")
         self.folder_tree.column("#0", width=initial_sash_position)
         self.folder_tree.heading("#0", text="Search folders", anchor="w")
-        for search_directory in initial_dirs:
-            # only insert non-empty strings
-            if search_directory:
-                # Insert top-level folder node and populate it hierarchically
-                top_node = self.folder_tree.insert("", "end", text=search_directory, open=False, image=self._folder_icon, values=(search_directory,))
-                try:
-                    self._populate_folder_tree(top_node, search_directory)
-                except Exception:
-                    # If population fails, leave the node empty
-                    pass
 
         # Add a vertical scrollbar for the folder tree and pack both into folder_frame
         self.folder_scrollbar = tk.Scrollbar(self.folder_frame, orient=tk.VERTICAL, command=self.folder_tree.yview)
