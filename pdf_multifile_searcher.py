@@ -547,15 +547,20 @@ class PDFMultifileSearch:
         self.search_result_paths.clear()
 
         search_pattern = self.pattern_entry.get()
-        # Only run search if working_directory is a valid string
-        if not isinstance(self.working_directory, str) or not self.working_directory:
-            #print("No search folder selected. Please add a folder before searching.")
+        directories = []
+        for item in self.folder_tree.get_children():
+            values = self.folder_tree.item(item, 'values')
+            if values and len(values) > 0:
+                directories.append(values[0])
+        if not directories:
             return
-        try:
-            found = search_pdfs(self.working_directory, search_pattern)
-        except Exception as e:
-            print(f"Error during search: {e}")
-            found = {}
+        found = {}
+        for directory in directories:
+            try:
+                partial_found = search_pdfs(directory, search_pattern)
+                found.update(partial_found)
+            except Exception as e:
+                print(f"Error during search in {directory}: {e}")
 
         # Copy results into the instance's search_results and populate tree
         self.search_results = found
