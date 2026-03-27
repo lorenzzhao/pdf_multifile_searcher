@@ -10,7 +10,7 @@ from tkinter import filedialog
 from tkinter import ttk
 import os
 import configparser
-
+from tkinterdnd2 import DND_FILES, TkinterDnD
 #from PIL.ImageOps import expand
 CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.pdf_multifile_searcher_config.ini')
 
@@ -83,6 +83,7 @@ class PDFMultifileSearch:
         self.folder_tree = ttk.Treeview(self.folder_frame)
         # Bind DEL key to remove top-level folder nodes
         self.folder_tree.bind('<Delete>', self._on_folder_tree_delete)
+        
         # Create simple icons for folder and PDF file nodes. Keep references
         # on the instance to avoid garbage collection.
         try:
@@ -116,7 +117,10 @@ class PDFMultifileSearch:
         # Pack the containing frame into the search pane
         self.folder_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
         # Bind selection on the folder tree so clicking a PDF node loads it into the viewer
-        self.folder_tree.bind("<<TreeviewSelect>>", self.on_folder_tree_select)
+        self.folder_tree.bind("<<TreeviewSelect>>", self._on_folder_tree_select)
+        # Enable drag-and-drop for the folder_tree Treeview
+        self.folder_tree.drop_target_register(DND_FILES)
+        self.folder_tree.dnd_bind('<<Drop>>', self._on_folder_tree_drop)
 
         self.pattern_frame = tk.Frame(self.search_pane, background="lightblue", width=initial_sash_position)
         self.pattern_frame.pack(side=tk.TOP, fill=tk.X, expand=False)
@@ -287,6 +291,42 @@ class PDFMultifileSearch:
             # Only remove top-level nodes (parent is root)
             if not parent:
                 self.folder_tree.delete(node)
+    
+    def _on_folder_tree_drop(self, event):
+        # Called when a file or folder is dropped onto the folder_tree Treeview.
+        # Add the dropped file or folder to the folder_tree.
+        print("Drop event received")  # Debug print
+        # Use tk_root.splitlist to correctly parse the dropped file paths
+        paths = self.tk_root.splitlist(event.data)
+        for path in paths:
+            print(f"Processing path: {path}")  # Debug print
+            if os.path.isdir(path):
+                top_node = self.folder_tree.insert("", "end", text=path, open=False, image=self._folder_icon, values=(path,))
+                try:
+                    self._populate_folder_tree(top_node, path)
+                except Exception as e:
+                    print(f"Error populating folder tree: {e}")  # Debug print
+            elif os.path.isfile(path) and path.lower().endswith('.pdf'):
+                # For a dropped PDF file, add it as a child of a new folder node representing its directory
+                # This ensures consistent hierarchy in the folder_tree
+                parent_dir = os.path.dirname(path)
+                # Check if this parent directory already exists as a top-level node
+                # A more robust check might iterate all top-level nodes
+                existing_parent_node = None
+                for item_id in self.folder_tree.get_children():
+                    item_values = self.folder_tree.item(item_id, 'values')
+                    if item_values and item_values[0] == parent_dir:
+                        existing_parent_node = item_id
+                        break
+                
+                if not existing_parent_node:
+                    # Insert the parent directory as a new top-level node
+                    existing_parent_node = self.folder_tree.insert("", "end", text=parent_dir, open=False, image=self._folder_icon, values=(parent_dir,))
+                
+                # Insert the PDF file under its parent directory node
+                self.folder_tree.insert(existing_parent_node, "end", text=os.path.basename(path), values=(path,), image=self._pdf_icon)
+        return 'break'
+
     def _update_file_path_displays(self):
         """Update all file path displays in the search result tree based on current column width."""
         if not self.search_results:
@@ -471,7 +511,7 @@ class PDFMultifileSearch:
                 # Use the file name as text but store full path in the node's 'values' for later use
                 self.folder_tree.insert(parent_node, "end", text=entry, values=(full_path,), image=self._pdf_icon)
 
-    def on_folder_tree_select(self, event):
+    def _on_folder_tree_select(self, event):
         # Called when the user selects an item in the folder tree.
         selected = self.folder_tree.selection()
         if not selected:
@@ -620,7 +660,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--pattern', help='The pattern to search for')
     args = parser.parse_args()
 
-    tk_root = tk.Tk()
+    tk_root = TkinterDnD.Tk()
     pdf_viewer = PDFMultifileSearch(tk_root, args.folder, args.pattern)
 
     # Bind the window's close event to the exit_app function
