@@ -6,8 +6,7 @@ from dataclasses import dataclass
 import pymupdf as fitz
 from pprint import pprint  # for easily printing results
 import tkinter as tk
-from tkinter import filedialog
-from tkinter import ttk
+from tkinter import filedialog, font, ttk
 import os
 import configparser
 from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -83,8 +82,18 @@ class PDFMultifileSearch:
         self.paned_window.bind("<B1-Motion>", self.on_sash_drag)
 
         treeview_style = ttk.Style()
-        treeview_style.theme_use("clam")
+        treeview_style.theme_use("default")
         treeview_style.configure("Treeview.Heading", background="lightgrey", foreground="black", font=("TkDefaultFont", 10, "normal"))
+        
+        # Get the font metrics for the Treeview's font
+        font = tk.font.nametofont("TkDefaultFont")
+        font_metrics = font.metrics()
+        font_height = font_metrics["ascent"] + font_metrics["descent"]
+        # Calculate the row height based on the font metrics
+        row_height = font_height + 2  # Adding a small buffer
+        # Apply the calculated row height to the Treeview style
+        treeview_style.configure("Treeview", rowheight=row_height)
+        treeview_style.configure("Treeview", indent=30)
 
         # Fill content to the search pane
         # Create a frame to contain the folder tree and its vertical scrollbar.
@@ -92,14 +101,14 @@ class PDFMultifileSearch:
         self.folder_tree = ttk.Treeview(self.folder_frame)
         # Bind DEL key to remove top-level folder nodes
         self.folder_tree.bind('<Delete>', self._on_folder_tree_delete)
-        
+
         # Create simple icons for folder and PDF file nodes. Keep references
         # on the instance to avoid garbage collection.
         try:
-            self._folder_icon = tk.PhotoImage(width=16, height=16)
-            self._folder_icon.put("#F0C419", to=(0, 0, 15, 15))
-            self._pdf_icon = tk.PhotoImage(width=16, height=16)
-            self._pdf_icon.put("#D9534F", to=(0, 0, 15, 15))
+            self._folder_icon = tk.PhotoImage(width=font_height, height=font_height)
+            self._folder_icon.put("#F0C419", to=(0, 0, font_height, font_height))
+            self._pdf_icon = tk.PhotoImage(width=font_height, height=font_height)
+            self._pdf_icon.put("#D9534F", to=(0, 0, font_height, font_height))
         except Exception:
             # PhotoImage may fail in some headless environments; fall back to None
             self._folder_icon = None
@@ -109,10 +118,7 @@ class PDFMultifileSearch:
         # will allow access to the remainder when there are many entries.
         # Use a fixed visible height (10 rows) so the tree shows multiple
         # lines when expanded; scrolling will handle overflow.
-        try:
-            self.folder_tree["height"] = 10
-        except Exception:
-            self.folder_tree["height"] = 6
+        self.folder_tree["height"] = 10
 
         self.folder_tree.tag_configure("heading", foreground="red")
         self.folder_tree.column("#0", width=initial_sash_position)
