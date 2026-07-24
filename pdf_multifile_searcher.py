@@ -12,16 +12,21 @@ import os
 import configparser
 from tkinterdnd2 import DND_FILES, TkinterDnD
 #from PIL.ImageOps import expand
+from typing import Dict, List, Tuple, Optional # Added for type hinting
+import sys # Import sys
+
 CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.pdf_multifile_searcher_config.ini')
 
-try:
-    # When used as a package
-    from .pdf_models import Match
-    from .pdf_search import search_pdfs
-except Exception:
-    # When executed as a script (no package context)
-    from pdf_models import Match
-    from pdf_search import search_pdfs
+# --- CRITICAL FIX: Ensure the script's directory is in the Python path FIRST ---
+# This allows direct imports of sibling modules (like pdf_models, pdf_search)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
+# --- Now, import sibling modules directly without relative paths or try-except ---
+# This assumes pdf_models.py and pdf_search.py are in the same directory.
+from pdf_models import Match
+from pdf_search import search_pdfs, sort_results
 
 
 class PDFMultifileSearch:
@@ -41,7 +46,11 @@ class PDFMultifileSearch:
         # dictionary with one entry per PDF file
         # each entry is a dictionary, whose key is the page number of the match and the
         # value is a list of rectangles of the match locations
-        self.search_results = dict()
+        self.search_results: Dict[str, List[Match]] = {} # Type hint for clarity
+
+        # --- NEW: Sorting state variables ---
+        self.current_sort_column: Optional[str] = None
+        self.sort_ascending: bool = True
 
         menu_bar = tk.Menu(self.tk_root)
 
@@ -142,10 +151,11 @@ class PDFMultifileSearch:
         # Search results
         self.search_result_tree = ttk.Treeview(self.search_pane, columns=("context", "page_number", "match_id"))
         self.search_result_tree.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.search_result_tree.heading("#0", text="File")
-        self.search_result_tree.heading("context", text="Context")
-        self.search_result_tree.heading("page_number", text="Page")
-        self.search_result_tree.heading("match_id", text="ID")
+        self.search_result_tree.heading("#0", text="File", command=lambda: self._sort_results_by_column("#0"))
+        self.search_result_tree.heading("context", text="Context") # Removed command for 'context'
+        self.search_result_tree.heading("page_number", text="Page", command=lambda: self._sort_results_by_column("page_number"))
+        self.search_result_tree.heading("match_id", text="ID", command=lambda: self._sort_results_by_column("match_id"))
+
         self.search_result_tree.bind("<<TreeviewSelect>>", self.on_treeview_select)
         # Set the result tree's columns' widths
         column_weights = [20, 20]
@@ -562,22 +572,90 @@ class PDFMultifileSearch:
             except Exception as e:
                 print(f"Error during search in {directory}: {e}")
 
-        # Copy results into the instance's search_results and populate tree
+        # Copy results into the instance's search_results
         self.search_results = found
+        self._refresh_results_display() # NEW: Call to refresh display after search
 
-        # Get the current column width for the File column
-        file_column_width = self.search_result_tree.column("#0", "width")
-        
+    def _sort_results_by_column(self, column_id: str):
+        """Sorts the search results and updates the Treeview."""
+        if column_id == "context": # Do not sort by context column
+            return
+
+        if self.current_sort_column == column_id:
+            self.sort_ascending = not self.sort_ascending # Toggle order
+        else:
+            self.current_sort_column = column_id
+            self.sort_ascending = True # Default to ascending for new column
+
+        self._refresh_results_display() # Refresh display with new sort order
+
+    def _refresh_results_display(self):
+        """Clears and repopulates the search result tree with current_search_results,
+        applying any active sorting."""
+        self.search_result_tree.delete(*self.search_result_tree.get_children())
+
+        if not self.search_results:
+            return
+
+        # Flatten the dictionary results into a list of (file_path, match_object) tuples
+        flattened_results: List[Tuple[str, Match]] = []
         for file_path, matches in self.search_results.items():
-            # Shorten the path for display based on column width
-            display_path = self.shorten_path_for_width(file_path, file_column_width)
-            # Store full path in values tuple, display shortened path as text
-            main_item = self.search_result_tree.insert("", "end", text=display_path, values=(file_path,))
             for match in matches:
-                self.search_result_tree.insert(main_item, "end", text="", values=(match.context
-                                                                                  , match.page_number
-                                                                                  , match.match_id
-                                                                                  ))
+                flattened_results.append((file_path, match))
+
+        # Apply sorting if a column is selected
+        if self.current_sort_column:
+            def get_sort_key(item: Tuple[str, Match]):
+                file_path, match = item
+                if self.current_sort_column == "#0": # File column
+                    return file_path
+                elif self.current_sort_column == "context":
+                    # This case should ideally not be reached if the command is removed from heading
+                    return match.context_text
+                elif self.current_sort_column == "page_number":
+                    return match.page_number
+                elif self.current_sort_column == "match_id":
+                    return match.match_id
+                return "" # Default if key not found
+
+            flattened_results.sort(key=get_sort_key, reverse=not self.sort_ascending)
+
+        # Get the current column width for the File column for display shortening
+        file_column_width = self.search_result_tree.column("#0", "width")
+
+        # Re-populate the Treeview
+        # We need to reconstruct the parent-child hierarchy if sorting globally.
+        # Group matches back by file path for Treeview display.
+        grouped_results: Dict[str, List[Match]] = {}
+        for file_path, match in flattened_results:
+            if file_path not in grouped_results:
+                grouped_results[file_path] = []
+            grouped_results[file_path].append(match)
+
+        for file_path in grouped_results: # Iterate through sorted file paths
+            display_path = self.shorten_path_for_width(file_path, file_column_width)
+            main_item = self.search_result_tree.insert("", "end", text=display_path, values=(file_path,))
+            
+            # Sort matches within each file if an internal match property is the sort key
+            matches_for_file = grouped_results[file_path]
+            # The 'sort_results' function from pdf_search.py can be used here
+            if self.current_sort_column in ["page_number", "match_id"]: # Removed "context"
+                # The 'sort_results' utility sorts a list of Matches, which is what grouped_results[file_path] is
+                matches_for_file = sorted(matches_for_file, key=lambda m: getattr(m, self._map_column_to_match_attr(self.current_sort_column)), reverse=not self.sort_ascending)
+
+
+            for match in matches_for_file:
+                self.search_result_tree.insert(main_item, "end", text="", values=(match.context, match.page_number, match.match_id))
+
+    def _map_column_to_match_attr(self, column_id: str) -> str:
+        """Helper to map Treeview column ID to Match attribute name."""
+        if column_id == "context":
+            return "context_text"
+        elif column_id == "page_number":
+            return "page_number"
+        elif column_id == "match_id":
+            return "match_id"
+        return "" # Should not happen for valid column_ids
 
     def load_pdf(self, file_path):
         self.loaded_pdf_document = fitz.open(file_path)

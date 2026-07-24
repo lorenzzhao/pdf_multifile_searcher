@@ -7,12 +7,17 @@ This logic was extracted from the GUI class to make it testable and reusable.
 import os
 from typing import Dict, List
 import pymupdf as fitz
-try:
-    # When used as a package
-    from .pdf_models import Match
-except Exception:
-    # When executed as a standalone module
-    from pdf_models import Match
+import sys # Import sys
+
+# --- CRITICAL FIX: Ensure the script's directory is in the Python path FIRST ---
+# This allows direct imports of sibling modules (like pdf_models, pdf_search)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
+# --- Now, import sibling modules directly without relative paths or try-except ---
+# This assumes pdf_models.py and pdf_search.py are in the same directory.
+from pdf_models import Match
 
 
 def search_pdfs(working_directory: str, search_pattern: str) -> Dict[str, List[Match]]:
@@ -82,3 +87,20 @@ def search_pdfs(working_directory: str, search_pattern: str) -> Dict[str, List[M
                 results[pdf_file_path] = matches
 
     return results
+
+def sort_results(results: Dict[str, List[Match]], sort_key: str, ascending: bool = True) -> Dict[str, List[Match]]:
+    """Sort the search results based on the given sort key.
+
+    Args:
+        results: The search results to sort.
+        sort_key: The key to sort by (e.g., 'file_path', 'page_number').
+        ascending: Whether to sort in ascending order.
+
+    Returns:
+        The sorted search results.
+    """
+    sorted_results = {}
+    for file_path, matches in results.items():
+        sorted_matches = sorted(matches, key=lambda match: getattr(match, sort_key), reverse=not ascending)
+        sorted_results[file_path] = sorted_matches
+    return sorted_results
