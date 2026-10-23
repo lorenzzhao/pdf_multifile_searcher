@@ -27,7 +27,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     from pdf_multifile_searcher.config import ConfigStore
     from pdf_multifile_searcher.core.models import SearchOptions
-    from pdf_multifile_searcher.gui.icons import icon
+    from pdf_multifile_searcher.gui.icons import app_icon
     from pdf_multifile_searcher.gui.main_window import MainWindow
     from pdf_multifile_searcher.gui.style import apply_theme, current_theme
 
@@ -40,7 +40,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     app.setApplicationVersion(__version__)
     app.setDesktopFileName(APP_ID)
     apply_theme(app, current_theme())
-    app.setWindowIcon(icon("app"))
+    app.setWindowIcon(app_icon())
 
     store = ConfigStore()
     settings = store.load()

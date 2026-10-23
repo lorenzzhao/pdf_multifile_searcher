@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=PDF Multifile Searcher
+GenericName=PDF Search
+Comment=Search text in many PDF files at once
+Exec=pdf-multifile-searcher
+Icon=pdf-multifile-searcher
+Terminal=false
+Categories=Office;Viewer;
+Keywords=PDF;search;find;text;documents;
+StartupWMClass=pdf-multifile-searcher

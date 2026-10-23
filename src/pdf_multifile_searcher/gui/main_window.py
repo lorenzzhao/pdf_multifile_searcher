@@ -54,7 +54,7 @@ from pdf_multifile_searcher.core.models import (
 from pdf_multifile_searcher.core.runner import SearchRunner
 from pdf_multifile_searcher.gui.dialogs import PreferencesDialog, ProblemsDialog, show_about
 from pdf_multifile_searcher.gui.folder_tree import FolderTree
-from pdf_multifile_searcher.gui.icons import icon
+from pdf_multifile_searcher.gui.icons import app_icon, icon
 from pdf_multifile_searcher.gui.results import (
     COL_CONTEXT,
     COL_FILE,
@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
         self._restoring = True
 
         self.setWindowTitle(APP_NAME)
-        self.setWindowIcon(icon("app"))
+        self.setWindowIcon(app_icon())
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(SAVE_DELAY_MS)

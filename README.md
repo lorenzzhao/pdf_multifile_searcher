@@ -23,10 +23,26 @@ context, and the matching page is shown right next to the list with the match hi
 
 ## Installation
 
-Python 3.11 or newer is required.
+Download the latest version from the
+[Releases page](https://github.com/lorenzzhao/pdf_multifile_searcher/releases/latest):
+
+| System | Download | How to start |
+|---|---|---|
+| Windows 10/11, 64-bit | `…-windows-x64-setup.exe` | Run the installer; it needs no administrator rights. Then start the program from the Start menu. |
+| Windows, no installation | `…-windows-x64-portable.zip` | Unzip and run `pdf-multifile-searcher.exe`. |
+| Linux, x86_64 | `PDF_Multifile_Searcher-…-x86_64.AppImage` | `chmod +x` the file, then run it. |
+| Linux, x86_64, as a folder | `…-linux-x86_64.tar.gz` | Unpack and run `./pdf-multifile-searcher`. |
+
+The Windows programs are not code-signed yet. If Windows SmartScreen says "Windows
+protected your PC", choose **More info → Run anyway**. The Linux builds run on
+distributions with glibc 2.28 or newer (for example Ubuntu 20.04, Debian 10, RHEL 8 and
+later). Every download contains the command-line program `pdf-multifile-search` as well.
+With the AppImage, run the AppImage with `--no-gui` instead.
+
+With Python 3.11 or newer you can also install it as a Python package:
 
 ```bash
-pipx install .
+pipx install pdf-multifile-searcher
 ```
 
 For development, from the project root:

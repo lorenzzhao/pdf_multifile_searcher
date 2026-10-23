@@ -9,6 +9,7 @@ always see the copyright, the license, the lack of warranty and where to get the
 
 from __future__ import annotations
 
+import sys
 from importlib import metadata
 from pathlib import Path
 
@@ -33,8 +34,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 def read_bundled_text(name: str) -> str | None:
     """Return the text of a license file shipped with the program, or None.
 
-    Installed packages carry the files in their metadata; a source checkout has them in
-    the repository root.
+    Installed packages carry the files in their metadata, the standalone programs in a
+    "licenses" folder, and a source checkout in the repository root.
     """
     try:
         dist = metadata.distribution(_DISTRIBUTION)
@@ -43,10 +44,24 @@ def read_bundled_text(name: str) -> str | None:
                 return Path(str(dist.locate_file(file))).read_text(encoding="utf-8")
     except (metadata.PackageNotFoundError, OSError, UnicodeDecodeError):
         pass
-    try:
-        return (_REPO_ROOT / name).read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
-        return None
+    for folder in _fallback_folders():
+        try:
+            return (folder / name).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+    return None
+
+
+def _fallback_folders() -> list[Path]:
+    """Where license files live outside installed package metadata."""
+    folders = []
+    bundle = getattr(sys, "_MEIPASS", None)  # PyInstaller bundle
+    if bundle:
+        folders.append(Path(bundle) / "licenses")
+    if getattr(sys, "frozen", False):
+        folders.append(Path(sys.executable).resolve().parent / "licenses")
+    folders.append(_REPO_ROOT)
+    return folders
 
 
 def version_text(program: str, version: str) -> str:

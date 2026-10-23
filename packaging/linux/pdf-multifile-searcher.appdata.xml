@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<component type="desktop-application">
+  <id>pdf-multifile-searcher</id>
+  <name>PDF Multifile Searcher</name>
+  <summary>Search text in many PDF files at once</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+  <developer id="de.lorenzzhao">
+    <name>Lorenz Zhao</name>
+  </developer>
+  <description>
+    <p>
+      Search any number of folders and PDF files for a text, see every match with the
+      words around it, and view the matching page with the match highlighted.
+    </p>
+  </description>
+  <launchable type="desktop-id">pdf-multifile-searcher.desktop</launchable>
+  <url type="homepage">https://github.com/lorenzzhao/pdf_multifile_searcher</url>
+  <categories>
+    <category>Office</category>
+  </categories>
+  <releases>
+    <release version="@VERSION@"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

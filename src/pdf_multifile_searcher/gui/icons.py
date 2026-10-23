@@ -8,6 +8,8 @@ sharp at any device pixel ratio.
 
 from __future__ import annotations
 
+from importlib import resources
+
 from PySide6.QtCore import QByteArray, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QGuiApplication, QIcon, QIconEngine, QPainter, QPalette, QPixmap
 from PySide6.QtSvg import QSvgRenderer
@@ -117,6 +119,27 @@ class _TintedSvgEngine(QIconEngine):
 
     def clone(self) -> QIconEngine:
         return _TintedSvgEngine(self._name, self._color, self._stroke_width)
+
+
+def app_icon() -> QIcon:
+    """The application icon (also used for the packaged programs)."""
+    try:
+        data = (
+            resources.files("pdf_multifile_searcher") / "resources" / "app-icon.svg"
+        ).read_bytes()
+    except OSError:
+        return icon("app")
+    renderer = QSvgRenderer(QByteArray(data))
+    result = QIcon()
+    for size in (16, 24, 32, 48, 64, 128, 256):
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        renderer.render(painter, QRectF(0, 0, size, size))
+        painter.end()
+        result.addPixmap(pixmap)
+    return result
 
 
 def icon(name: str, color: QColor | None = None, stroke_width: float = 1.8) -> QIcon:
