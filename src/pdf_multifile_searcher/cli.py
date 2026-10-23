@@ -23,11 +23,12 @@ from pdf_multifile_searcher.core.models import (
     SearchOptions,
     SearchQuery,
 )
-from pdf_multifile_searcher.core.runner import FileFound, SearchRunner, Skipped
+from pdf_multifile_searcher.core.runner import FileFound, SearchRunner, Skipped, WorkerStartError
 
 EXIT_MATCHES = 0
 EXIT_NO_MATCHES = 1
 EXIT_USAGE = 2
+EXIT_ERROR = 3
 EXIT_INTERRUPTED = 130
 
 
@@ -133,6 +134,9 @@ def run_headless(args: argparse.Namespace, parser: argparse.ArgumentParser) -> i
     except KeyboardInterrupt:
         runner.cancel()
         return EXIT_INTERRUPTED
+    except WorkerStartError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ERROR
     if args.format == "csv":
         write_csv(csv_rows, sys.stdout)
     sys.stdout.flush()

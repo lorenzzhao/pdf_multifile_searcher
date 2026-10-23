@@ -734,7 +734,7 @@ class MainWindow(QMainWindow):
         self._old_threads.append(thread)
         self._set_searching(False)
         self.status_label.setText("Search failed.")
-        QMessageBox.warning(self, "Search failed", message)
+        QMessageBox.warning(self, "Search failed", f"The search could not run.\n\n{message}")
 
     @staticmethod
     def _summary_text(summary: SearchSummary) -> str:

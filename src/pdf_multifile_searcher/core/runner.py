@@ -14,6 +14,7 @@ from __future__ import annotations
 import concurrent.futures as cf
 import logging
 import multiprocessing
+import multiprocessing.spawn
 import os
 import threading
 import time
@@ -67,6 +68,33 @@ class Finished:
 
 
 SearchEvent = Started | Progress | FileFound | Skipped | Finished
+
+
+class WorkerStartError(RuntimeError):
+    """The worker processes for a search cannot be started."""
+
+
+def _prepare_spawn() -> None:
+    """Make sure worker processes can be started.
+
+    `multiprocessing` reads the current directory when it starts a worker, which fails if
+    that directory was deleted while the program was running (for example the folder the
+    program was started from). Searches only use absolute paths, so moving to the home
+    folder is harmless. A deleted Python interpreter cannot be repaired; the user gets a
+    clear message instead of a bare "[Errno 2]".
+    """
+    try:
+        os.getcwd()
+    except OSError:
+        home = os.path.expanduser("~")
+        log.warning("Working directory no longer exists; switching to %s", home)
+        os.chdir(home)
+    executable = os.fsdecode(multiprocessing.spawn.get_executable() or "")
+    if not executable or not os.path.exists(executable):
+        raise WorkerStartError(
+            f"The Python interpreter {executable or '(unknown)'} no longer exists, so no "
+            "search processes can be started. Please restart the program."
+        )
 
 
 class SearchRunner:
@@ -182,6 +210,7 @@ class SearchRunner:
     ) -> Iterator[SearchEvent]:
         workers = self.workers or os.cpu_count() or 2
         workers = max(1, min(workers, len(tasks)))
+        _prepare_spawn()
         # "spawn" is safe with a running GUI and identical on all platforms.
         context = multiprocessing.get_context("spawn")
         executor = cf.ProcessPoolExecutor(
@@ -190,8 +219,14 @@ class SearchRunner:
             initializer=init_worker,
             initargs=(logging.getLogger().getEffectiveLevel(),),
         )
-        futures = {executor.submit(search_file, task): i for i, task in enumerate(tasks)}
+        try:
+            # Worker processes are started here, on the first submissions.
+            futures = {executor.submit(search_file, task): i for i, task in enumerate(tasks)}
+        except (OSError, cf.BrokenExecutor) as exc:
+            executor.shutdown(wait=False, cancel_futures=True)
+            raise WorkerStartError(f"Could not start the search processes: {exc}") from exc
         pending = set(futures)
+        any_arrived = False
         try:
             while pending and not self.cancelled:
                 done, pending = cf.wait(pending, timeout=0.1, return_when=cf.FIRST_COMPLETED)
@@ -199,9 +234,18 @@ class SearchRunner:
                     index = futures[future]
                     try:
                         outcome = future.result()
+                    except cf.BrokenExecutor as exc:
+                        if not any_arrived:
+                            # No worker ever delivered a result: they could not start.
+                            raise WorkerStartError(
+                                f"The search processes could not be started: {exc}"
+                            ) from exc
+                        log.warning("Worker failed on %s: %s", tasks[index].path, exc)
+                        outcome = FileOutcome(tasks[index].path, [], "cannot be read")
                     except Exception as exc:  # worker process died
                         log.warning("Worker failed on %s: %s", tasks[index].path, exc)
                         outcome = FileOutcome(tasks[index].path, [], "cannot be read")
+                    any_arrived = True
                     yield from on_arrival(index, outcome)
         except GeneratorExit:
             self.cancel()

@@ -57,7 +57,8 @@ Search without a window and print `file:page: context` for each match:
 pdf-multifile-search -f ~/Documents -p "invoice \d+" --regex --whole-word
 ```
 
-Exit codes: `0` matches found, `1` no matches, `2` usage error. Use `--format csv` for CSV
+Exit codes: `0` matches found, `1` no matches, `2` usage error, `3` the search could
+not run. Use `--format csv` for CSV
 output and `--help` for all options. `pdf-multifile-searcher --no-gui …` does the same.
 
 ### Keyboard shortcuts

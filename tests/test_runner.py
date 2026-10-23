@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import multiprocessing.spawn
 import os
 from pathlib import Path
 
@@ -11,7 +12,13 @@ import pytest
 
 from pdf_multifile_searcher.core import textsource
 from pdf_multifile_searcher.core.models import SearchOptions, SearchQuery, SearchSummary
-from pdf_multifile_searcher.core.runner import FileFound, Finished, SearchRunner, Skipped
+from pdf_multifile_searcher.core.runner import (
+    FileFound,
+    Finished,
+    SearchRunner,
+    Skipped,
+    WorkerStartError,
+)
 from pdf_multifile_searcher.pdf_backend import (
     REASON_DAMAGED,
     REASON_ENCRYPTED,
@@ -129,3 +136,22 @@ def test_cancel_during_pool_search(data_dir: Path) -> None:
         if isinstance(event, Finished):
             assert event.summary.cancelled
             break
+
+
+def test_search_survives_deleted_working_directory(
+    tmp_path: Path, data_dir: Path, monkeypatch
+) -> None:
+    """Regression: a deleted start folder made every search fail with a bare "[Errno 2]"."""
+    gone = tmp_path / "start-folder"
+    gone.mkdir()
+    monkeypatch.chdir(gone)
+    gone.rmdir()
+    matches, _, summary = search([data_dir], "Zephyria", in_process=False, workers=2)
+    assert len(matches) == 4 and not summary.cancelled
+
+
+def test_missing_interpreter_gives_clear_error(data_dir: Path, monkeypatch) -> None:
+    monkeypatch.setattr(multiprocessing.spawn, "get_executable", lambda: "/nonexistent/python")
+    runner = SearchRunner([str(data_dir)], SearchQuery("the"), workers=2)
+    with pytest.raises(WorkerStartError, match="restart the program"):
+        list(runner.run())

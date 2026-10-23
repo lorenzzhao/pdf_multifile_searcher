@@ -15,6 +15,7 @@ from pdf_multifile_searcher.core.runner import (
     SearchRunner,
     Skipped,
     Started,
+    WorkerStartError,
 )
 
 log = logging.getLogger(__name__)
@@ -48,6 +49,11 @@ class SearchThread(QThread):
                     self.started_files.emit(event.files_total)
                 elif isinstance(event, Finished):
                     self.finished_search.emit(event.summary)
-        except Exception as exc:
-            log.exception("Search failed")
+        except WorkerStartError as exc:
+            log.error("Search failed: %s", exc)
             self.failed.emit(str(exc))
+        except Exception as exc:
+            # Name the exception type: some errors (e.g. FileNotFoundError from
+            # os.getcwd()) have a bare message such as "[Errno 2] No such file or directory".
+            log.exception("Search failed")
+            self.failed.emit(f"{exc.__class__.__name__}: {exc}")

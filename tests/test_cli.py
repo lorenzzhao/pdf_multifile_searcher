@@ -72,3 +72,12 @@ def test_skipped_files_go_to_stderr(capsys, tmp_path: Path, data_dir: Path) -> N
 def test_options_flags(capsys, data_dir: Path) -> None:
     _, out, _ = run_cli(capsys, "-f", str(data_dir), "-p", "The", "-c", "-w", "--no-cache")
     assert len(out.strip().splitlines()) == 17
+
+
+def test_worker_start_failure_exit_code(capsys, data_dir: Path, monkeypatch) -> None:
+    import multiprocessing.spawn
+
+    monkeypatch.setattr(multiprocessing.spawn, "get_executable", lambda: "/nonexistent/python")
+    code, _, err = run_cli(capsys, "-f", str(data_dir), "-p", "the", "--no-cache", "--jobs", "2")
+    assert code == cli.EXIT_ERROR
+    assert "restart the program" in err
