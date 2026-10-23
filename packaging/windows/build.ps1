@@ -17,10 +17,29 @@ $Work = Join-Path $Temp "pdfms-build"
 $Out = Join-Path $Root "release"
 $AppId = "pdf-multifile-searcher"
 
+# On GitHub Actions, report failures as annotations: they are visible without signing in,
+# unlike the job logs.
+function Write-Annotation {
+    param([string]$Message)
+    if ($env:GITHUB_ACTIONS) {
+        $text = $Message -replace "%", "%25" -replace "`r", "" -replace "`n", "%0A"
+        Write-Host "::error title=Windows build::$text"
+    }
+}
+
+trap {
+    Write-Annotation ($_ | Out-String)
+    exit 1
+}
+
 function Invoke-Checked {
     param([string]$Exe, [string[]]$Arguments)
-    & $Exe @Arguments
-    if ($LASTEXITCODE -ne 0) { throw "$Exe failed with exit code $LASTEXITCODE" }
+    $Lines = @(& $Exe @Arguments 2>&1 | ForEach-Object { "$_" })
+    $Lines | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+        $Tail = ($Lines | Select-Object -Last 40) -join "`n"
+        throw "$Exe failed with exit code $LASTEXITCODE`n$Tail"
+    }
 }
 
 Write-Host "== Creating the build environment"
@@ -28,8 +47,9 @@ if (Test-Path $Work) { Remove-Item -Recurse -Force $Work }
 New-Item -ItemType Directory -Force -Path $Work, $Out | Out-Null
 Invoke-Checked python @("-m", "venv", "$Work\bootstrap")
 Invoke-Checked "$Work\bootstrap\Scripts\python.exe" @("-m", "pip", "install", "--quiet", "zstandard")
-$Standalone = (& "$Work\bootstrap\Scripts\python.exe" "packaging\fetch_python.py" "windows" $Work).Trim()
-if ($LASTEXITCODE -ne 0) { throw "Fetching the standalone Python failed" }
+$Fetched = @(& "$Work\bootstrap\Scripts\python.exe" "packaging\fetch_python.py" "windows" $Work 2>&1 | ForEach-Object { "$_" })
+if ($LASTEXITCODE -ne 0) { throw "Fetching the standalone Python failed`n$($Fetched -join "`n")" }
+$Standalone = $Fetched[-1].Trim()
 Invoke-Checked $Standalone @("-m", "venv", "$Work\venv")
 $Py = "$Work\venv\Scripts\python.exe"
 Invoke-Checked $Py @("-m", "pip", "install", "--quiet", "--upgrade", "pip")
