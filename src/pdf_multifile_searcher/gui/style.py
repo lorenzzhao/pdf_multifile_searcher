@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Look and feel: Fusion style with a light and a dark theme that follow the system."""
 
 from __future__ import annotations

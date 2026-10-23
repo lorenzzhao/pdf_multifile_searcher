@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """The search runner: parallel, streaming and cancellable (FR-SRCH-05…09, FR-MATCH-02).
 
 `SearchRunner.run()` is a generator of events. The CLI iterates it directly; the GUI

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Entry point of the GUI (`pdf-multifile-searcher`)."""
 
 from __future__ import annotations

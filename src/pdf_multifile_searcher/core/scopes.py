@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Search scopes and file collection (FR-SCOPE-03, FR-SCOPE-06, FR-SCOPE-07, NFR-SEC-03)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """The program's own matcher (FR-SRCH-04, FR-SRCH-13, FR-SRCH-17, FR-MATCH-04).
 
 The matcher is a pure function from page text and a query to matches (NFR-MAINT-07). It

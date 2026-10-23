@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """CSV export of search results (FR-RES-13, FR-CLI-08)."""
 
 from __future__ import annotations

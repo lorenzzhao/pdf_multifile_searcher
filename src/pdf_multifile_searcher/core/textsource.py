@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Where page text comes from (NFR-MAINT-06).
 
 `TextSource` is the single interface the search uses to obtain page text. There are two

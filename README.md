@@ -104,9 +104,27 @@ The code is split into layers (see `docs/REQUIREMENTS.md`, NFR-MAINT-01):
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 or later
-(AGPL-3.0-or-later); see `LICENSE`.
+Copyright (C) 2025–2026 Lorenz Zhao
 
-Version 2 no longer depends on PyMuPDF. Its dependencies (PySide6 under LGPL-3.0,
-pypdfium2/PDFium under Apache-2.0 or BSD-3-Clause, platformdirs under MIT) would also
-allow a more permissive license; see `THIRD_PARTY_NOTICES.txt`.
+This program is free software: you can redistribute it and/or modify it under the terms
+of the GNU Affero General Public License as published by the Free Software Foundation,
+either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU Affero General Public License for more details.
+
+The full license text is in [`LICENSE`](LICENSE). In short: if you distribute this program,
+modified or not, or let users interact with a modified version over a network, you must
+make the complete corresponding source code available to them under the same license.
+
+### Third-party components
+
+The program uses Qt for Python (PySide6, LGPL-3.0), pypdfium2 and PDFium (Apache-2.0 /
+BSD-3-Clause, with further bundled components) and platformdirs (MIT). All of them are
+compatible with the AGPL. They are not part of this repository; `pip` installs them from
+PyPI together with their own license files. See
+[`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt) for the details, including what a
+binary bundle of the program would have to contain.
+
+Version 1 depended on PyMuPDF; version 2 no longer does.

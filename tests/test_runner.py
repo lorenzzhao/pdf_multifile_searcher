@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Search runner: sample data, IDs, skipped files, cancel (FR-SRCH, FR-MATCH-02, FR-ERR)."""
 
 from __future__ import annotations

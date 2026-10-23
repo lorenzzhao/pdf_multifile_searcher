@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Runs a SearchRunner on a background thread and forwards its events (FR-SRCH-06)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Preferences, problem list and About dialogs."""
 
 from __future__ import annotations
@@ -5,6 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -13,7 +16,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
+    QPlainTextEdit,
     QPushButton,
     QSpinBox,
     QTreeWidget,
@@ -22,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from pdf_multifile_searcher import APP_NAME, __version__, system
+from pdf_multifile_searcher import APP_NAME, __version__, legal, system
 from pdf_multifile_searcher.config import Settings
 from pdf_multifile_searcher.core.models import SkippedFile
 
@@ -138,17 +141,73 @@ class ProblemsDialog(QDialog):
         layout.addWidget(buttons)
 
 
+class TextViewDialog(QDialog):
+    """Shows a plain-text document read-only, e.g. the license."""
+
+    def __init__(self, title: str, text: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.resize(720, 560)
+        view = QPlainTextEdit(self)
+        view.setReadOnly(True)
+        view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        view.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
+        view.setPlainText(text)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
+        buttons.rejected.connect(self.reject)
+        layout = QVBoxLayout(self)
+        layout.addWidget(view, 1)
+        layout.addWidget(buttons)
+
+
+class AboutDialog(QDialog):
+    """Version, copyright, license, warranty disclaimer and source code link
+    (the AGPL's "Appropriate Legal Notices")."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(f"About {APP_NAME}")
+        self.setMinimumWidth(480)
+        text = QLabel(
+            f"<h3>{APP_NAME} {__version__}</h3>"
+            "<p>Search text in many PDF files at once and view the matches in place.</p>"
+            f"<p>{legal.COPYRIGHT}</p>"
+            f"<p>Licensed under the <a href='{legal.LICENSE_URL}'>{legal.LICENSE_NAME}</a>.<br>"
+            f"Source code: <a href='{legal.SOURCE_URL}'>{legal.SOURCE_URL}</a></p>"
+            f"<p>{legal.NO_WARRANTY}</p>"
+            "<p>Uses Qt for Python (PySide6, LGPL-3.0), pypdfium2 and PDFium "
+            "(Apache-2.0 / BSD-3-Clause) and platformdirs (MIT); see the third-party "
+            "notices.</p>",
+            self,
+        )
+        text.setWordWrap(True)
+        text.setTextFormat(Qt.TextFormat.RichText)
+        text.setOpenExternalLinks(True)
+        text.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
+        buttons.rejected.connect(self.reject)
+        self.license_button = self._text_button(buttons, "License…", legal.LICENSE_FILE, "License")
+        self.notices_button = self._text_button(
+            buttons, "Third-party notices…", legal.NOTICES_FILE, "Third-party notices"
+        )
+        layout = QVBoxLayout(self)
+        layout.addWidget(text)
+        layout.addSpacing(8)
+        layout.addWidget(buttons)
+
+    def _text_button(
+        self, buttons: QDialogButtonBox, label: str, file_name: str, title: str
+    ) -> QPushButton:
+        button = buttons.addButton(label, QDialogButtonBox.ButtonRole.ActionRole)
+        content = legal.read_bundled_text(file_name)
+        if content is None:
+            button.setEnabled(False)
+            button.setToolTip(f"{file_name} is not installed with this copy of the program.")
+        else:
+            button.clicked.connect(lambda: TextViewDialog(title, content, self).exec())
+        return button
+
+
 def show_about(parent: QWidget) -> None:
-    QMessageBox.about(
-        parent,
-        f"About {APP_NAME}",
-        f"<h3>{APP_NAME} {__version__}</h3>"
-        "<p>Search text in many PDF files at once and view the matches in place.</p>"
-        "<p>Licensed under the GNU Affero General Public License v3.0 or later.</p>"
-        "<p><b>Third-party components</b><br>"
-        "Qt for Python (PySide6), LGPL-3.0<br>"
-        "pypdfium2, Apache-2.0 or BSD-3-Clause<br>"
-        "PDFium, Apache-2.0 / BSD-3-Clause<br>"
-        "platformdirs, MIT</p>"
-        "<p>See THIRD_PARTY_NOTICES.txt for details.</p>",
-    )
+    AboutDialog(parent).exec()

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """`python -m pdf_multifile_searcher` starts the GUI (or the headless search with --no-gui)."""
 
 import sys

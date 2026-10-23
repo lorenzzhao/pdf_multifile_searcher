@@ -1,33 +1,107 @@
-Third-party dependency notices
-==============================
+Third-party notices
+===================
 
-This project depends on the following third-party packages. This file is a short notice
-to help review license compatibility before distribution. Refer to the upstream projects
-for the authoritative license texts.
+PDF Multifile Searcher
+Copyright (C) 2025–2026 Lorenz Zhao
+Licensed under the GNU Affero General Public License, version 3 or later
+(AGPL-3.0-or-later); see LICENSE.
 
-1) Qt for Python (PySide6) and Qt 6
-   - Purpose: graphical user interface
-   - Project: https://doc.qt.io/qtforpython-6/ and https://pypi.org/project/PySide6/
-   - License: LGPL-3.0-only (or GPL-2.0/GPL-3.0, or a commercial license from The Qt Company)
-   - Notes: PySide6 is used as an unmodified, dynamically loaded library. When
-     distributing binaries, the LGPL requires that users can replace the Qt libraries
-     and that the LGPL license text and source offer are provided.
+This file lists the third-party components the program uses, their licenses, and what
+has to be done when the program is distributed. It is a summary to help with license
+review, not legal advice. The authoritative license texts are those shipped with each
+component.
 
-2) pypdfium2 and PDFium
-   - Purpose: PDF parsing, text extraction and page rendering
-   - Project: https://github.com/pypdfium2-team/pypdfium2 and https://pdfium.googlesource.com/pdfium/
-   - License: pypdfium2 is Apache-2.0 or BSD-3-Clause; PDFium is Apache-2.0 and
-     BSD-3-Clause. The PDFium binaries bundled with pypdfium2 include further
-     third-party components under permissive licenses (for example FreeType, libjpeg-turbo,
-     OpenJPEG, zlib and ICU); pypdfium2 ships their license texts.
 
-3) platformdirs
-   - Purpose: platform-specific locations for settings and the text cache
-   - Project: https://pypi.org/project/platformdirs/
-   - License: MIT
+1. How the program is distributed today
+---------------------------------------
 
-Development-only tools (not distributed with the application): pytest (MIT),
-pytest-qt (MIT), ruff (MIT), mypy (MIT).
+The program is distributed as source code only (this repository and Python source
+packages). The third-party components below are NOT included: pip installs them
+separately from PyPI, and each of them comes with its own license files.
 
-Earlier versions of this project depended on PyMuPDF (AGPL-3.0 or commercial license
-from Artifex Software). Version 2 no longer uses it.
+All licenses listed below are compatible with the AGPL-3.0-or-later.
+
+
+2. Runtime dependencies
+-----------------------
+
+Qt for Python: PySide6-Essentials and shiboken6
+  Purpose:  graphical user interface (QtCore, QtGui, QtWidgets, QtSvg)
+  Project:  https://doc.qt.io/qtforpython-6/
+  License:  LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only (used under LGPL-3.0)
+  Notes:    The Qt libraries contained in these wheels have their own third-party
+            components; see https://doc.qt.io/qt-6/licenses-used-in-qt.html.
+            The wheels themselves do not ship license text files.
+
+pypdfium2
+  Purpose:  PDF text extraction and page rendering
+  Project:  https://github.com/pypdfium2-team/pypdfium2
+  License:  Apache-2.0 OR BSD-3-Clause
+  Notes:    pypdfium2's documentation and examples are under CC-BY-4.0; they are not
+            used or distributed by this program.
+
+PDFium (shipped as a binary inside the pypdfium2 wheel)
+  Project:  https://pdfium.googlesource.com/pdfium/
+  License:  BSD-3-Clause (PDFium is also published under Apache-2.0)
+  The PDFium binary includes the following components. Their license texts are in the
+  installed pypdfium2 package (BUILD_LICENSES directory):
+
+    Abseil                     Apache-2.0
+    Anti-Grain Geometry 2.3    BSD-style (AGG 2.3 license)
+    fast_float                 MIT OR Apache-2.0
+    FreeType                   FreeType License (FTL)
+    ICU                        Unicode License v3
+    Little CMS                 MIT
+    libjpeg-turbo              IJG License, BSD-3-Clause and Zlib
+    OpenJPEG                   BSD-2-Clause
+    libpng                     libpng License
+    LLVM libc                  Apache-2.0 WITH LLVM-exception
+    pdfium-binaries build      MIT
+    simdutf                    Apache-2.0 OR MIT
+    zlib                       Zlib
+
+platformdirs
+  Purpose:  platform-specific locations for settings and the text cache
+  Project:  https://github.com/tox-dev/platformdirs
+  License:  MIT
+
+
+3. Development tools
+--------------------
+
+Used for testing and code checks only, never distributed with the program:
+pytest (MIT), pytest-qt (MIT), ruff (MIT), mypy (MIT), hatchling (MIT, build backend).
+
+
+4. Files in this repository
+---------------------------
+
+All source code, icons and documentation were written for this project and are under
+the project license. The test PDFs in tests/data contain texts written for this project;
+they embed font subsets of Liberation Serif, which is licensed under the SIL Open Font
+License 1.1. That license explicitly allows embedding fonts in documents.
+
+
+5. Distributing a binary bundle
+-------------------------------
+
+Nothing in this section applies to the source distribution described in section 1. If
+the program is ever distributed together with its dependencies, for example as a
+PyInstaller bundle, AppImage, Flatpak or installer, the bundle must:
+
+  - include LICENSE (AGPL-3.0) and this file;
+  - include the texts of the LGPL-3.0 and the GPL-3.0 (the LGPL builds on the GPL),
+    and Qt's third-party license notices;
+  - keep the Qt libraries as separate shared libraries that users can replace with
+    their own modified versions, as the LGPL-3.0 requires;
+  - include pypdfium2's LICENSES and BUILD_LICENSES directories and the platformdirs
+    license;
+  - offer the complete corresponding source code of the program under the AGPL, for
+    example with a link to the exact tagged version in the public repository.
+
+
+6. History
+----------
+
+Version 1 of the program depended on PyMuPDF (AGPL-3.0 or commercial license from
+Artifex Software). Version 2 no longer uses PyMuPDF.

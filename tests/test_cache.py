@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Text cache: hits, invalidation, corruption, permissions (FR-CACHE, NFR-SEC-04)."""
 
 from __future__ import annotations

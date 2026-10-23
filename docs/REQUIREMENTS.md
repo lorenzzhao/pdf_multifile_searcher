@@ -618,8 +618,8 @@ answers; answers marked **Implemented** were decided during the rewrite. §2.4 s
   extracted text, so it does not depend on the engine: if AGPL is acceptable to you, PyMuPDF can be
   used in the same adapter instead, and the rest of the design stays the same. In return,
   `pypdfium2` needs the program to do more of the matching work itself.
-  _Reviewer: the engine is implemented as `pypdfium2`. The project license is still open: the
-  LICENSE file still says AGPL-3.0, and no dependency requires that any more._
+  **Decided:** the engine is `pypdfium2`, and the project stays under the AGPL, now as
+  AGPL-3.0-or-later.
 - **Q3: Language.** Stay with Python, or rewrite in another language?
   → **Proposed:** Python 3.11+. Worker processes cover the performance needs, and the text cache
   covers repeat searches.

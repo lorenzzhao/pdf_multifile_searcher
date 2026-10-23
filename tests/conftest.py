@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Shared fixtures. Test PDFs are generated with pypdfium2, so they are reproducible
 (NFR-TEST-03); the committed sample PDFs in tests/data are used as-is."""
 

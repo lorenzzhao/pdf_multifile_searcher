@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Hand-off to the operating system: external PDF viewer and file manager (FR-RES-14)."""
 
 from __future__ import annotations

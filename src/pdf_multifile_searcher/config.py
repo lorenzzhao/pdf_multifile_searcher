@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Settings: loading, atomic saving and migration from the old INI file (FR-CFG, MIG-01)."""
 
 from __future__ import annotations

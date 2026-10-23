@@ -11,10 +11,14 @@ license = "AGPL-3.0-or-later"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.txt"]
 requires-python = ">=3.11"
 dependencies = [
-    "PySide6>=6.6",
+    "PySide6-Essentials>=6.6",
     "pypdfium2>=4.30",
     "platformdirs>=4.0",
 ]
+
+[project.urls]
+Source = "https://github.com/lorenzzhao/pdf_multifile_searcher"
+License = "https://www.gnu.org/licenses/agpl-3.0.html"
 
 [project.optional-dependencies]
 dev = [

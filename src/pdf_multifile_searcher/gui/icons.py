@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """A small set of line icons drawn as SVG and tinted to the current palette.
 
 Icons follow the palette at paint time, so they stay legible in light and dark mode and are

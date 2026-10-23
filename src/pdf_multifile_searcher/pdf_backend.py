@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """PDF backend adapter (NFR-MAINT-02, NFR-LIC-03).
 
 All calls into the PDF library go through this module. The rest of the program only uses

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Settings round trip, robustness and INI migration (FR-CFG, MIG-01, FR-CLI-04)."""
 
 from __future__ import annotations

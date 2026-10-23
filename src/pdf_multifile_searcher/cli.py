@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2025–2026 Lorenz Zhao
 """Command line: shared argument parser and the headless search mode (FR-CLI).
 
 This module must not import Qt, so the headless mode works without a display.
@@ -11,7 +13,7 @@ import multiprocessing
 import sys
 from collections.abc import Sequence
 
-from pdf_multifile_searcher import APP_NAME, __version__
+from pdf_multifile_searcher import APP_NAME, __version__, legal
 from pdf_multifile_searcher.cache import default_cache_path
 from pdf_multifile_searcher.core.export import write_csv
 from pdf_multifile_searcher.core.matcher import PatternError
@@ -33,6 +35,8 @@ def build_parser(headless_only: bool = False) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pdf-multifile-search" if headless_only else "pdf-multifile-searcher",
         description=f"{APP_NAME}: search text in many PDF files at once.",
+        # Keeps the line breaks of the --version text.
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "-f",
@@ -75,7 +79,12 @@ def build_parser(headless_only: bool = False) -> argparse.ArgumentParser:
         choices=("DEBUG", "INFO", "WARNING", "ERROR"),
         help="diagnostic output level (default: WARNING)",
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=legal.version_text(parser.prog, __version__),
+        help="show version, copyright and license information and exit",
+    )
     return parser
 
 
