@@ -35,8 +35,35 @@ publishing anything.
 - Only the program folder, on any system: `pyinstaller packaging/pdf-multifile-searcher.spec`
 
 After changing the app icon (`src/pdf_multifile_searcher/resources/app-icon.svg`), run
-`QT_QPA_PLATFORM=offscreen python packaging/render_icons.py`. After upgrading Qt, run
-`python packaging/fetch_qt_notices.py` to refresh the Qt license notices.
+`QT_QPA_PLATFORM=offscreen python packaging/render_icons.py`.
+
+## Licenses in the standalone programs
+
+The release packages contain third-party components, so their license conditions apply
+to every release (see `THIRD_PARTY_NOTICES.txt`, section 5). The build takes care of it:
+
+- `packaging/collect_licenses.py` writes the `licenses` folder of each package and stops
+  the build if any binary cannot be assigned to a component with a known license, or if
+  a Linux system library has a GPL-family license.
+- The `sources` job of the release workflow attaches the source archives of the bundled
+  LGPL components (Qt, Qt for Python, AppImage runtime, libfuse) to the release.
+
+## Upgrading bundled components
+
+All bundled versions are pinned, because the notices and the attached source code must
+match exactly what is in the packages:
+
+- `packaging/release-constraints.txt`: PySide6-Essentials, shiboken6, pypdfium2,
+  platformdirs, PyInstaller.
+- `packaging/pins.json`: the standalone Python, the Qt version, the source archives
+  (URL and SHA-256) and the AppImage tools.
+
+When upgrading Qt, change PySide6-Essentials, shiboken6, `qt_version` and the Qt and
+pyside-setup source archives together, then run `python packaging/fetch_qt_notices.py`
+to refresh the Qt notices. PySide6 6.10 and later need glibc 2.34, so upgrading beyond
+6.9 also raises the minimum Linux version. When the build stops with an unknown binary,
+find out which component it belongs to and add its license before adding it to the
+rules in `collect_licenses.py`.
 
 ## Publishing to PyPI (one-time setup)
 

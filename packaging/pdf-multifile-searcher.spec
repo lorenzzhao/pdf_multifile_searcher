@@ -7,6 +7,8 @@
 #
 # Folder mode (not one-file) keeps the Qt libraries as separate, replaceable shared
 # libraries, as the LGPL-3.0 requires (see THIRD_PARTY_NOTICES.txt, section 5).
+# The "licenses" folder is added afterwards by packaging/collect_licenses.py, which also
+# checks that every binary in the result has a known licence.
 # ruff: noqa
 import sys
 from importlib import metadata
@@ -20,38 +22,20 @@ PACKAGING = ROOT / "packaging"
 ICON = PACKAGING / "icons" / "app-icon.ico"
 
 
-def license_files(distribution: str, target: str) -> list[tuple[str, str]]:
-    """License files of an installed distribution, keeping their folder layout."""
-    dist = metadata.distribution(distribution)
-    result = []
-    for file in dist.files or []:
-        parts = Path(str(file)).parts
-        if "licenses" not in parts:
-            continue
-        sub = Path(*parts[parts.index("licenses") + 1 : -1])
-        result.append((str(dist.locate_file(file)), str(Path("licenses") / target / sub)))
-    if not result:
-        raise SystemExit(f"No license files found for {distribution}")
-    return result
-
-
 datas = [
     (str(SRC / "pdf_multifile_searcher" / "resources"), "pdf_multifile_searcher/resources"),
-    (str(ROOT / "LICENSE"), "licenses"),
-    (str(ROOT / "THIRD_PARTY_NOTICES.txt"), "licenses"),
-    (str(PACKAGING / "licenses" / "GPL-3.0.txt"), "licenses"),
-    (str(PACKAGING / "licenses" / "LGPL-3.0.txt"), "licenses"),
-    (str(PACKAGING / "licenses" / "QT_THIRD_PARTY_NOTICES.txt"), "licenses"),
 ]
-datas += license_files("pypdfium2", "pypdfium2")
-datas += license_files("platformdirs", "platformdirs")
 datas += copy_metadata("pdf-multifile-searcher")  # version and license lookup at runtime
+
 
 # Qt and Python modules the program never uses.
 excludes = [
     "tkinter",
     "unittest",
     "pydoc",
+    "readline",
+    "curses",
+    "dbm",
     "PySide6.QtNetwork",
     "PySide6.QtQml",
     "PySide6.QtQuick",
@@ -113,17 +97,40 @@ def _is_root(dest: str) -> bool:
 
 # Linux libraries that every desktop provides and that must match the host system
 # (following the AppImage project's exclude list); bundling old copies breaks fonts and
-# display connections on newer systems.
+# display connections on newer systems. GLib, the C++ runtime and zlib are on every
+# desktop too; leaving them out also keeps their dependencies (GnuTLS and others) out.
 HOST_LIBS = re.compile(
     r"^lib(fontconfig|freetype|X11|X11-xcb|xcb|dbus-1|GL|EGL|GLX|GLdispatch|OpenGL|drm|gbm"
-    r"|wayland-client|wayland-cursor|wayland-egl)\.so(\.\d+)*$"
+    r"|wayland-client|wayland-cursor|wayland-egl|glib-2\.0|gthread-2\.0|gobject-2\.0"
+    r"|gmodule-2\.0|gio-2\.0|pcre|pcre2-8|stdc\+\+|gcc_s|z)\.so(\.\d+)*$"
 )
+
+
+def _is_host_lib(dest: str) -> bool:
+    return sys.platform.startswith("linux") and bool(HOST_LIBS.match(_norm(dest).rsplit("/", 1)[-1]))
+
+
+def direct_imports(path: str) -> list[str]:
+    """Names of the libraries a binary links directly.
+
+    On Linux, PyInstaller's get_imports() uses ldd, which also lists indirect
+    dependencies; then a host library such as GLib could not keep its own dependencies
+    out of the bundle. readelf lists only the direct ones (DT_NEEDED).
+    """
+    if sys.platform.startswith("linux"):
+        import subprocess
+
+        out = subprocess.run(
+            ["readelf", "-d", path], capture_output=True, text=True, check=False
+        ).stdout
+        return re.findall(r"\(NEEDED\)\s+Shared library: \[([^\]]+)\]", out)
+    from PyInstaller.depend import bindepend
+
+    return [item[0] if isinstance(item, tuple) else item for item in bindepend.get_imports(path)]
 
 
 def prune(toc: list) -> list:
     """Drop unwanted Qt parts, then every shared library nothing remaining depends on."""
-    from PyInstaller.depend import bindepend
-
     toc = [entry for entry in toc if not PRUNE.search(_norm(entry[0]))]
     binaries = [e for e in toc if e[2] in ("BINARY", "EXTENSION")]
     by_base: dict[str, list] = {}
@@ -134,23 +141,22 @@ def prune(toc: list) -> list:
     while todo:
         entry = todo.pop()
         base = _norm(entry[0]).rsplit("/", 1)[-1].lower()
-        if base in keep:
-            continue
+        if base in keep or _is_host_lib(entry[0]):
+            continue  # host libraries are neither kept nor followed
         keep.add(base)
         try:
-            imports = bindepend.get_imports(entry[1])
+            imports = direct_imports(entry[1])
         except Exception:
             imports = []
         for item in imports:
-            name = (item[0] if isinstance(item, tuple) else item).rsplit("/", 1)[-1].lower()
-            name = name.rsplit("\\", 1)[-1]
+            name = item.rsplit("/", 1)[-1].rsplit("\\", 1)[-1].lower()
             todo.extend(by_base.get(name, []))
     result = []
     for entry in toc:
         base = _norm(entry[0]).rsplit("/", 1)[-1].lower()
         if entry[2] in ("BINARY", "EXTENSION") and base not in keep:
             continue
-        if sys.platform.startswith("linux") and HOST_LIBS.match(_norm(entry[0])):
+        if _is_host_lib(entry[0]):
             continue  # provided by the host system
         if entry[2] == "SYMLINK" and re.search(r"\.(so(\.\d+)*|dll)$", base) and base not in keep:
             continue  # link to a library that was dropped

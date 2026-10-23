@@ -140,8 +140,12 @@ make the complete corresponding source code available to them under the same lic
 The program uses Qt for Python (PySide6, LGPL-3.0), pypdfium2 and PDFium (Apache-2.0 /
 BSD-3-Clause, with further bundled components) and platformdirs (MIT). All of them are
 compatible with the AGPL. They are not part of this repository; `pip` installs them from
-PyPI together with their own license files. See
-[`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt) for the details, including what a
-binary bundle of the program would have to contain.
+PyPI together with their own license files.
+
+The standalone programs on the Releases page contain these components plus Python and,
+on Linux, a few system libraries. Each program has a `licenses` folder with all license
+texts and notices, and each release has the source code of the included Qt, Qt for
+Python and AppImage runtime attached. See
+[`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt) for the details.
 
 Version 1 depended on PyMuPDF; version 2 no longer does.

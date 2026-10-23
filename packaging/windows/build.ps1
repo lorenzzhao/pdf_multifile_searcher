@@ -2,7 +2,10 @@
 # Copyright (C) 2025-2026 Lorenz Zhao
 #
 # Build the Windows release files: a portable ZIP and an Inno Setup installer.
-# Requirements: Python 3.11+ on PATH (python), Inno Setup 6 (iscc).
+# Requirements: Python 3.11+ on PATH (python, only runs the build scripts), Inno Setup 6
+# (iscc). The program is built with the pinned standalone Python (packaging/pins.json)
+# and the pinned packages (packaging/release-constraints.txt); collect_licenses.py adds
+# the "licenses" folder and stops the build if any DLL has an unknown licence.
 # Output: release\ (relative to the repository root)
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -23,10 +26,14 @@ function Invoke-Checked {
 Write-Host "== Creating the build environment"
 if (Test-Path $Work) { Remove-Item -Recurse -Force $Work }
 New-Item -ItemType Directory -Force -Path $Work, $Out | Out-Null
-Invoke-Checked python @("-m", "venv", "$Work\venv")
+Invoke-Checked python @("-m", "venv", "$Work\bootstrap")
+Invoke-Checked "$Work\bootstrap\Scripts\python.exe" @("-m", "pip", "install", "--quiet", "zstandard")
+$Standalone = (& "$Work\bootstrap\Scripts\python.exe" "packaging\fetch_python.py" "windows" $Work).Trim()
+if ($LASTEXITCODE -ne 0) { throw "Fetching the standalone Python failed" }
+Invoke-Checked $Standalone @("-m", "venv", "$Work\venv")
 $Py = "$Work\venv\Scripts\python.exe"
 Invoke-Checked $Py @("-m", "pip", "install", "--quiet", "--upgrade", "pip")
-Invoke-Checked $Py @("-m", "pip", "install", "--quiet", $Root, "pyinstaller")
+Invoke-Checked $Py @("-m", "pip", "install", "--quiet", "-c", "packaging\release-constraints.txt", $Root, "pyinstaller")
 $Version = (& $Py -c "from importlib.metadata import version; print(version('pdf-multifile-searcher'))").Trim()
 Write-Host "Version: $Version"
 
@@ -35,8 +42,8 @@ Invoke-Checked "$Work\venv\Scripts\pyinstaller.exe" @(
     "packaging\pdf-multifile-searcher.spec", "--noconfirm",
     "--distpath", "$Work\dist", "--workpath", "$Work\pyinstaller")
 $Bundle = "$Work\dist\$AppId"
-Copy-Item -Recurse "$Bundle\_internal\licenses" "$Bundle\licenses"
 Copy-Item "packaging\README-binary.txt" "$Bundle\README.txt"
+Invoke-Checked $Py @("packaging\collect_licenses.py", "--bundle", $Bundle, "--python", "$Work\python")
 
 Write-Host "== Smoke tests"
 $Cli = "$Bundle\pdf-multifile-search.exe"

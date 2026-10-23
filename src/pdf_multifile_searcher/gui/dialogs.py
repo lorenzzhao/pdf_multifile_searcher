@@ -16,9 +16,11 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
+    QListWidget,
     QPlainTextEdit,
     QPushButton,
     QSpinBox,
+    QSplitter,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -141,33 +143,47 @@ class ProblemsDialog(QDialog):
         layout.addWidget(buttons)
 
 
-class TextViewDialog(QDialog):
-    """Shows a plain-text document read-only, e.g. the license."""
+class LicensesDialog(QDialog):
+    """Shows every licence document available to this copy of the program."""
 
-    def __init__(self, title: str, text: str, parent: QWidget | None = None) -> None:
+    def __init__(self, documents: list[tuple[str, str]], parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setWindowTitle(title)
-        self.resize(720, 560)
-        view = QPlainTextEdit(self)
-        view.setReadOnly(True)
-        view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-        view.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
-        view.setPlainText(text)
+        self.setWindowTitle("Licenses")
+        self.resize(920, 600)
+        self.documents = documents
+        self.list = QListWidget(self)
+        self.list.addItems([title for title, _text in documents])
+        self.view = QPlainTextEdit(self)
+        self.view.setReadOnly(True)
+        self.view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        self.view.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
+        self.list.currentRowChanged.connect(self._show)
+        splitter = QSplitter(Qt.Orientation.Horizontal, self)
+        splitter.addWidget(self.list)
+        splitter.addWidget(self.view)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([260, 660])
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
         buttons.rejected.connect(self.reject)
         layout = QVBoxLayout(self)
-        layout.addWidget(view, 1)
+        layout.addWidget(splitter, 1)
         layout.addWidget(buttons)
+        if documents:
+            self.list.setCurrentRow(0)
+
+    def _show(self, row: int) -> None:
+        if 0 <= row < len(self.documents):
+            self.view.setPlainText(self.documents[row][1])
 
 
 class AboutDialog(QDialog):
-    """Version, copyright, license, warranty disclaimer and source code link
-    (the AGPL's "Appropriate Legal Notices")."""
+    """Version, copyright, license, warranty disclaimer and source code link (the AGPL's
+    "Appropriate Legal Notices"), and Qt's copyright notice (LGPL-3.0, section 4c)."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(f"About {APP_NAME}")
-        self.setMinimumWidth(480)
+        self.setMinimumWidth(500)
         text = QLabel(
             f"<h3>{APP_NAME} {__version__}</h3>"
             "<p>Search text in many PDF files at once and view the matches in place.</p>"
@@ -175,9 +191,11 @@ class AboutDialog(QDialog):
             f"<p>Licensed under the <a href='{legal.LICENSE_URL}'>{legal.LICENSE_NAME}</a>.<br>"
             f"Source code: <a href='{legal.SOURCE_URL}'>{legal.SOURCE_URL}</a></p>"
             f"<p>{legal.NO_WARRANTY}</p>"
-            "<p>Uses Qt for Python (PySide6, LGPL-3.0), pypdfium2 and PDFium "
-            "(Apache-2.0 / BSD-3-Clause) and platformdirs (MIT); see the third-party "
-            "notices.</p>",
+            f"<p>{legal.QT_COPYRIGHT}. Used under the "
+            f"<a href='{legal.LGPL_URL}'>GNU Lesser General Public License v3.0</a>, which "
+            f"builds on the <a href='{legal.GPL_URL}'>GNU General Public License v3.0</a>.</p>"
+            "<p>The program also uses pypdfium2 and PDFium, platformdirs and Python. "
+            "<i>Licenses…</i> shows the licence texts and notices of all components.</p>",
             self,
         )
         text.setWordWrap(True)
@@ -187,26 +205,21 @@ class AboutDialog(QDialog):
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
         buttons.rejected.connect(self.reject)
-        self.license_button = self._text_button(buttons, "License…", legal.LICENSE_FILE, "License")
-        self.notices_button = self._text_button(
-            buttons, "Third-party notices…", legal.NOTICES_FILE, "Third-party notices"
+        self.licenses_button = buttons.addButton(
+            "Licenses…", QDialogButtonBox.ButtonRole.ActionRole
         )
+        self.documents = legal.license_documents()
+        if self.documents:
+            self.licenses_button.clicked.connect(
+                lambda: LicensesDialog(self.documents, self).exec()
+            )
+        else:
+            self.licenses_button.setEnabled(False)
+            self.licenses_button.setToolTip("No licence files are installed with this copy.")
         layout = QVBoxLayout(self)
         layout.addWidget(text)
         layout.addSpacing(8)
         layout.addWidget(buttons)
-
-    def _text_button(
-        self, buttons: QDialogButtonBox, label: str, file_name: str, title: str
-    ) -> QPushButton:
-        button = buttons.addButton(label, QDialogButtonBox.ButtonRole.ActionRole)
-        content = legal.read_bundled_text(file_name)
-        if content is None:
-            button.setEnabled(False)
-            button.setToolTip(f"{file_name} is not installed with this copy of the program.")
-        else:
-            button.clicked.connect(lambda: TextViewDialog(title, content, self).exec())
-        return button
 
 
 def show_about(parent: QWidget) -> None:

@@ -28,6 +28,7 @@ def test_version_text() -> None:
     assert lines[1] == legal.COPYRIGHT
     assert legal.LICENSE_SPDX in text and legal.SOURCE_URL in text
     assert "NO WARRANTY" in text
+    assert legal.QT_COPYRIGHT in text
 
 
 def test_cli_version_keeps_line_breaks(capsys: pytest.CaptureFixture[str]) -> None:
@@ -43,5 +44,21 @@ def test_about_dialog(qtbot) -> None:
 
     dialog = AboutDialog()
     qtbot.addWidget(dialog)
-    assert dialog.license_button.isEnabled()
-    assert dialog.notices_button.isEnabled()
+    assert dialog.licenses_button.isEnabled()
+    assert [title for title, _ in dialog.documents] == [legal.LICENSE_FILE, legal.NOTICES_FILE]
+
+
+def test_licenses_dialog_lists_bundle_folder(qtbot, tmp_path, monkeypatch) -> None:
+    from pdf_multifile_searcher.gui.dialogs import LicensesDialog
+
+    folder = tmp_path / "licenses"
+    (folder / "qt").mkdir(parents=True)
+    (folder / "LICENSE").write_text("agpl")
+    (folder / "qt" / "QT_THIRD_PARTY_NOTICES.txt").write_text("qt notices")
+    monkeypatch.setattr(legal, "bundled_license_folder", lambda: folder)
+    documents = legal.license_documents()
+    assert [title for title, _ in documents] == ["LICENSE", "qt/QT_THIRD_PARTY_NOTICES.txt"]
+    dialog = LicensesDialog(documents)
+    qtbot.addWidget(dialog)
+    dialog.list.setCurrentRow(1)
+    assert dialog.view.toPlainText() == "qt notices"

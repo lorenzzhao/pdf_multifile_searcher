@@ -6,39 +6,38 @@ Copyright (C) 2025–2026 Lorenz Zhao
 Licensed under the GNU Affero General Public License, version 3 or later
 (AGPL-3.0-or-later); see LICENSE.
 
-This file lists the third-party components the program uses, their licenses, and what
-has to be done when the program is distributed. It is a summary to help with license
-review, not legal advice. The authoritative license texts are those shipped with each
-component.
+This file lists the third-party components of the program, their licenses, and how the
+license conditions are met when the program is distributed. It is a summary to help with
+license review, not legal advice. The authoritative license texts are those shipped with
+each component.
 
 
-1. How the program is distributed today
----------------------------------------
-
-The program is distributed in two ways:
+1. How the program is distributed
+---------------------------------
 
   - As source code and Python packages (this repository, the wheel and the sdist).
-    These do NOT include the third-party components below: pip installs them
-    separately from PyPI, and each of them comes with its own license files.
+    These do NOT contain the third-party components: pip installs them separately from
+    PyPI, and each of them comes with its own license files.
 
-  - As standalone programs for Windows and Linux (installer, portable ZIP, AppImage,
-    tar.gz), built with PyInstaller. These DO include the components below and
-    therefore follow section 5: every package has a "licenses" folder with the
-    license texts and notices, and the release page links the matching source code.
+  - As standalone programs for Windows (installer, portable ZIP) and Linux (AppImage,
+    tar.gz), built with PyInstaller. These DO contain the components of sections 2 and 3
+    and follow section 5. Every package has a "licenses" folder with all license texts
+    and notices, an exact version list (VERSIONS.txt) and the source code locations
+    (SOURCES.txt).
 
 All licenses listed below are compatible with the AGPL-3.0-or-later.
 
 
-2. Runtime dependencies
------------------------
+2. Components of the program
+----------------------------
 
-Qt for Python: PySide6-Essentials and shiboken6
+Qt for Python: PySide6-Essentials and shiboken6, and the Qt libraries they contain
   Purpose:  graphical user interface (QtCore, QtGui, QtWidgets, QtSvg)
   Project:  https://doc.qt.io/qtforpython-6/
-  License:  LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only (used under LGPL-3.0)
-  Notes:    The Qt libraries contained in these wheels have their own third-party
-            components; see https://doc.qt.io/qt-6/licenses-used-in-qt.html.
-            The wheels themselves do not ship license text files.
+  License:  LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only (used under the LGPL-3.0)
+  Notes:    The third-party code inside Qt is listed in licenses/qt/
+            QT_THIRD_PARTY_NOTICES.txt. The Linux wheels also contain the ICU libraries
+            (Unicode License, licenses/qt/ICU-LICENSE.txt).
 
 pypdfium2
   Purpose:  PDF text extraction and page rendering
@@ -47,11 +46,11 @@ pypdfium2
   Notes:    pypdfium2's documentation and examples are under CC-BY-4.0; they are not
             used or distributed by this program.
 
-PDFium (shipped as a binary inside the pypdfium2 wheel)
+PDFium (a binary inside the pypdfium2 package)
   Project:  https://pdfium.googlesource.com/pdfium/
   License:  BSD-3-Clause (PDFium is also published under Apache-2.0)
-  The PDFium binary includes the following components. Their license texts are in the
-  installed pypdfium2 package (BUILD_LICENSES directory):
+  The PDFium binary includes the following components; their license texts are in
+  licenses/pypdfium2/ (BUILD_LICENSES):
 
     Abseil                     Apache-2.0
     Anti-Grain Geometry 2.3    BSD-style (AGG 2.3 license)
@@ -73,57 +72,100 @@ platformdirs
   License:  MIT
 
 
-3. Development tools
+3. Additional components of the standalone programs
+---------------------------------------------------
+
+Python (python-build-standalone)
+  The programs contain the Python interpreter (Python Software Foundation License 2.0)
+  in the build of https://github.com/astral-sh/python-build-standalone. It contains the
+  following libraries; licenses/python/ holds the license texts of exactly those that
+  are built into the bundled interpreter and modules:
+  OpenSSL 3 (Apache-2.0), SQLite (public domain), libffi (MIT), libedit (BSD-3-Clause),
+  ncurses (MIT/X11), xz/liblzma (0BSD), bzip2 (bzip2 license), zlib (Zlib),
+  expat (MIT), mpdecimal (BSD-2-Clause), libuuid (BSD-3-Clause).
+
+PyInstaller
+  The program launchers (pdf-multifile-searcher, pdf-multifile-search) are PyInstaller's
+  bootloader: GPL-2.0-or-later with an exception that allows distributing it with
+  programs under any license; see licenses/pyinstaller/.
+
+Linux system libraries (Linux packages only)
+  A few libraries that not every Linux system provides are taken from the build system
+  (AlmaLinux 8), for example the XCB utility libraries and libxkbcommon. The build
+  allows only permissively licensed system libraries; licenses/system-libraries/
+  SYSTEM_LIBRARIES.txt lists each one with package, version, license and source package,
+  and the folder holds their license files. Libraries every Linux desktop provides
+  (glibc, the C++ runtime, GLib, X11, Wayland, OpenGL, fontconfig, FreeType, D-Bus, zlib)
+  are not included; the program uses the system's copies.
+
+Microsoft Visual C++ runtime (Windows packages only)
+  vcruntime140*.dll, msvcp140*.dll and concrt140.dll: Microsoft Distributable Code,
+  redistributed together with the program under Microsoft's license terms; see
+  licenses/microsoft/.
+
+AppImage runtime (Linux AppImage only)
+  The AppImage file starts with the AppImage type 2 runtime (MIT,
+  https://github.com/AppImage/type2-runtime), which statically contains libfuse 3.15
+  (LGPL-2.1), squashfuse (BSD-2-Clause), zstd (BSD-3-Clause), zlib (Zlib),
+  mimalloc (MIT) and musl libc (MIT); see licenses/appimage-runtime/.
+
+Inno Setup (Windows installer only)
+  The installer is made with Inno Setup (Inno Setup License, permissive). Its setup
+  program only installs and uninstalls this program.
+
+
+4. Development tools
 --------------------
 
 Used for testing and code checks only, never distributed with the program:
 pytest (MIT), pytest-qt (MIT), ruff (MIT), mypy (MIT), hatchling (MIT, build backend).
 
 
-4. Files in this repository
+5. How the license conditions of the standalone programs are met
+-------------------------------------------------------------------
+
+AGPL-3.0 (the program itself)
+  - licenses/LICENSE contains the license; the About dialog and --version show the
+    copyright, the license, the warranty disclaimer and the source code location.
+  - The complete corresponding source code, including the build scripts in packaging/,
+    is the Git tag of each release, also attached to the release as a source archive.
+
+LGPL-3.0 (Qt and Qt for Python) and LGPL-2.1 (libfuse in the AppImage runtime)
+  - licenses/ contains the LGPL-3.0 and the GPL-3.0 it builds on; the AppImage also
+    contains the LGPL-2.1 (licenses/appimage-runtime/).
+  - The About dialog shows Qt's copyright notice and links both licenses.
+  - The programs are built in folder mode, so the Qt libraries are ordinary files in the
+    _internal/PySide6 folder and can be replaced with modified versions. The AppImage
+    runtime can be rebuilt with a modified libfuse from its attached source code.
+  - The unchanged source code of exactly the bundled versions of Qt (qtbase, qtsvg,
+    qtwayland), Qt for Python (pyside-setup), the AppImage runtime and libfuse is
+    attached to every GitHub release; licenses/SOURCES.txt lists the archives with
+    their checksums. The versions are pinned in packaging/pins.json and
+    packaging/release-constraints.txt.
+
+Notices of permissive licenses (MIT, BSD, Apache-2.0, PSF, Unicode, zlib and others)
+  - The license texts and copyright notices of every bundled component are in
+    licenses/. The build (packaging/collect_licenses.py) assembles them and stops if
+    any binary in a package cannot be assigned to a component with a known license, or
+    if a Linux system library is under a GPL-family license.
+
+
+6. Files in this repository
 ---------------------------
 
 All source code, icons and documentation were written for this project and are under
 the project license. The test PDFs in tests/data contain texts written for this project;
 they embed font subsets of Liberation Serif, which is licensed under the SIL Open Font
-License 1.1. That license explicitly allows embedding fonts in documents.
+License 1.1. That license explicitly allows embedding fonts in documents. The files in
+packaging/licenses/ are the unmodified license texts and notices of the components
+above.
 
 
-5. Distributing a binary bundle
--------------------------------
-
-Nothing in this section applies to the source distribution described in section 1. A
-bundle that contains the dependencies (PyInstaller bundle, AppImage, Flatpak, installer)
-must:
-
-  - include LICENSE (AGPL-3.0) and this file;
-  - include the texts of the LGPL-3.0 and the GPL-3.0 (the LGPL builds on the GPL),
-    and Qt's third-party license notices;
-  - keep the Qt libraries as separate shared libraries that users can replace with
-    their own modified versions, as the LGPL-3.0 requires;
-  - include pypdfium2's LICENSES and BUILD_LICENSES directories and the platformdirs
-    license;
-  - offer the complete corresponding source code of the program under the AGPL, for
-    example with a link to the exact tagged version in the public repository.
-
-The official release packages, built by packaging/pdf-multifile-searcher.spec and the
-release workflow, do this as follows:
-
-  - licenses/ contains LICENSE, this file, GPL-3.0.txt, LGPL-3.0.txt,
-    QT_THIRD_PARTY_NOTICES.txt (generated by packaging/fetch_qt_notices.py from Qt's
-    documentation), and pypdfium2/ and platformdirs/ with their license files;
-  - the programs are built in folder mode, so the Qt libraries are ordinary files in
-    the _internal folder (Linux: _internal/PySide6/Qt/lib, Windows: _internal/PySide6)
-    and can be replaced;
-  - every release page links the Git tag of its source code, and GitHub attaches the
-    source archives to the release.
-
-Qt modules that the program does not use (for example Qt Quick, Qt QML, Qt PDF and Qt
-Network) are left out of the packages, so their notices are not needed.
-
-
-6. History
+7. History
 ----------
 
 Version 1 of the program depended on PyMuPDF (AGPL-3.0 or commercial license from
-Artifex Software). Version 2 no longer uses PyMuPDF.
+Artifex Software). Version 2 no longer uses PyMuPDF. The standalone programs of version
+2.0.0 lacked the notices of the Python interpreter, of several Linux system libraries
+and of some Qt modules, and their release did not include the Qt source code; version
+2.0.1 corrects this.

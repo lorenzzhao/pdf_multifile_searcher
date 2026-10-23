@@ -1,0 +1,73 @@
+{
+  "_comment": [
+    "Exact versions of everything that goes into the standalone release packages.",
+    "Licence notices and source archives are collected for exactly these versions, so",
+    "change them only together (see docs/RELEASING.md, 'Upgrading bundled components')."
+  ],
+  "python": {
+    "version": "3.12.14",
+    "build": "python-build-standalone 20260901",
+    "archives": {
+      "linux": {
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.12.14%2B20260901-x86_64-unknown-linux-gnu-pgo%2Blto-full.tar.zst",
+        "sha256": "f2e7bf187eaa66f88432b13cc560528c328b51d452de2fd0875561c82f7168e7"
+      },
+      "windows": {
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.12.14%2B20260901-x86_64-pc-windows-msvc-pgo-full.tar.zst",
+        "sha256": "b7cf8be5cd5222d1e456fbf71257efe558d84fe092757b6892c16584e5df01c2"
+      }
+    }
+  },
+  "qt_version": "6.9.3",
+  "qt_notice_modules": ["Qt Core", "Qt D-Bus", "Qt GUI", "Qt SVG", "Qt Wayland Compositor"],
+  "sources": [
+    {
+      "name": "qtbase-everywhere-src-6.9.3.tar.xz",
+      "url": "https://download.qt.io/archive/qt/6.9/6.9.3/submodules/qtbase-everywhere-src-6.9.3.tar.xz",
+      "sha256": "c5a1a2f660356ec081febfa782998ae5ddbc5925117e64f50e4be9cd45b8dc6e",
+      "covers": "Qt Core, Qt GUI, Qt Widgets, Qt D-Bus, Qt OpenGL, the platform integrations and the other Qt plugins (LGPL-3.0)",
+      "packages": ["linux", "windows"]
+    },
+    {
+      "name": "qtsvg-everywhere-src-6.9.3.tar.xz",
+      "url": "https://download.qt.io/archive/qt/6.9/6.9.3/submodules/qtsvg-everywhere-src-6.9.3.tar.xz",
+      "sha256": "db76aa3358cbbe6fce7da576ff4669cb9801920188c750d3b12783bbe97026e2",
+      "covers": "Qt SVG and the SVG plugins (LGPL-3.0)",
+      "packages": ["linux", "windows"]
+    },
+    {
+      "name": "qtwayland-everywhere-src-6.9.3.tar.xz",
+      "url": "https://download.qt.io/archive/qt/6.9/6.9.3/submodules/qtwayland-everywhere-src-6.9.3.tar.xz",
+      "sha256": "e413d4bc9263e80a465761debf8cb8317aa6b01e814b20046a05258e6573dadd",
+      "covers": "Qt Wayland Client and the Wayland plugins (LGPL-3.0)",
+      "packages": ["linux"]
+    },
+    {
+      "name": "pyside-setup-everywhere-src-6.9.3.tar.xz",
+      "url": "https://download.qt.io/official_releases/QtForPython/pyside6/PySide6-6.9.3-src/pyside-setup-everywhere-src-6.9.3.tar.xz",
+      "sha256": "7cd2d5abb98f2e6f442b0e41f5fcf930e7312ae4b17f681316b1adc7b63bb172",
+      "covers": "PySide6 and shiboken6 (LGPL-3.0)",
+      "packages": ["linux", "windows"]
+    },
+    {
+      "name": "type2-runtime-20251108.tar.gz",
+      "url": "https://github.com/AppImage/type2-runtime/archive/refs/tags/20251108.tar.gz",
+      "sha256": "4c4f6df4647c9f01f871d7edd3716d8aeeffda9d22ffbebe3fccd95a6ab52c95",
+      "covers": "AppImage runtime (MIT) with the libfuse patch and the build scripts needed to rebuild it with a modified libfuse",
+      "packages": ["appimage"]
+    },
+    {
+      "name": "fuse-3.15.0.tar.xz",
+      "url": "https://github.com/libfuse/libfuse/releases/download/fuse-3.15.0/fuse-3.15.0.tar.xz",
+      "sha256": "70589cfd5e1cff7ccd6ac91c86c01be340b227285c5e200baa284e401eea2ca0",
+      "covers": "libfuse 3.15.0, statically linked into the AppImage runtime (LGPL-2.1)",
+      "packages": ["appimage"]
+    }
+  ],
+  "appimage": {
+    "appimagetool_url": "https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage",
+    "appimagetool_sha256": "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0",
+    "runtime_url": "https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64",
+    "runtime_sha256": "2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d"
+  }
+}

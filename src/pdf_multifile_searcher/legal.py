@@ -19,6 +19,11 @@ LICENSE_SPDX = "AGPL-3.0-or-later"
 LICENSE_URL = "https://www.gnu.org/licenses/agpl-3.0.html"
 SOURCE_URL = "https://github.com/lorenzzhao/pdf_multifile_searcher"
 
+# Shown wherever the program shows its own copyright (LGPL-3.0, section 4c).
+QT_COPYRIGHT = "Qt and Qt for Python: Copyright (C) The Qt Company Ltd. and other contributors"
+LGPL_URL = "https://www.gnu.org/licenses/lgpl-3.0.html"
+GPL_URL = "https://www.gnu.org/licenses/gpl-3.0.html"
+
 NO_WARRANTY = (
     "This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are "
     "welcome to redistribute it under certain conditions; see the license for details."
@@ -64,6 +69,37 @@ def _fallback_folders() -> list[Path]:
     return folders
 
 
+def bundled_license_folder() -> Path | None:
+    """The "licenses" folder of a standalone package, or None when running from Python."""
+    if not getattr(sys, "frozen", False):
+        return None
+    folder = Path(sys.executable).resolve().parent / "licenses"
+    return folder if folder.is_dir() else None
+
+
+def license_documents() -> list[tuple[str, str]]:
+    """All licence documents available to show, as (title, text) pairs.
+
+    A standalone package shows every file of its "licenses" folder; a Python
+    installation shows the program's LICENSE and THIRD_PARTY_NOTICES.txt.
+    """
+    documents: list[tuple[str, str]] = []
+    folder = bundled_license_folder()
+    if folder is not None:
+        for path in sorted(p for p in folder.rglob("*") if p.is_file()):
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            documents.append((path.relative_to(folder).as_posix(), text))
+        return documents
+    for name in (LICENSE_FILE, NOTICES_FILE):
+        content = read_bundled_text(name)
+        if content is not None:
+            documents.append((name, content))
+    return documents
+
+
 def version_text(program: str, version: str) -> str:
     """Text for ``--version``, following the usual GNU convention."""
     return (
@@ -71,5 +107,6 @@ def version_text(program: str, version: str) -> str:
         f"{COPYRIGHT}\n"
         f"License: {LICENSE_SPDX} <{LICENSE_URL}>\n"
         f"Source code: <{SOURCE_URL}>\n"
+        f"{QT_COPYRIGHT}, licensed under the LGPL-3.0 <{LGPL_URL}>\n"
         f"{NO_WARRANTY}"
     )

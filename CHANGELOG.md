@@ -3,6 +3,29 @@
 All notable changes to PDF Multifile Searcher are listed here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.0.1] - 2026-10-23
+
+Corrects the license compliance of the standalone programs. The program itself is
+unchanged apart from the About dialog.
+
+### Fixed
+
+- The standalone programs now contain the license texts and notices of every included
+  component: Python and the libraries built into it, all bundled Qt modules (including
+  Qt SVG and Qt Wayland Client), ICU, PyInstaller's launcher, the Linux system libraries
+  and, in the AppImage, the AppImage runtime. Version 2.0.0 missed several of them.
+- Every release now has the source code of the included Qt, Qt for Python, AppImage
+  runtime and libfuse attached, as their LGPL licenses require.
+- The About dialog shows Qt's copyright notice, links the LGPL and GPL, and its
+  *Licenses…* window shows every license file of the package.
+
+### Changed
+
+- The standalone programs are built with a self-contained Python 3.12 and pinned
+  versions of all components (Qt 6.9.3). The Linux programs no longer include copies of
+  OpenSSL 1.1, GNU readline, GLib, GnuTLS and other system libraries; they use the
+  system's GLib and C++ runtime instead.
+
 ## [2.0.0] - 2026-10-23
 
 A complete rewrite with a new interface, a new PDF engine and standalone programs for

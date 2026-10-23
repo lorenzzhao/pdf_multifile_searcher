@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pdf-multifile-searcher"
-version = "2.0.0"
+version = "2.0.1"
 description = "Search text in many PDF files at once and view the matches in place."
 readme = "README.md"
 license = "AGPL-3.0-or-later"
