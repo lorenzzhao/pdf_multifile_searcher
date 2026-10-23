@@ -106,8 +106,16 @@ HOST_LIBS = re.compile(
 )
 
 
+# Windows: the Universal C Runtime (ucrtbase.dll and its api-ms-win-* forwarders) is part
+# of Windows 10 and 11, the minimum the programs support, so it is not redistributed.
+WINDOWS_HOST_LIBS = re.compile(r"^(api-ms-win-[\w-]+|ucrtbase)\.dll$", re.I)
+
+
 def _is_host_lib(dest: str) -> bool:
-    return sys.platform.startswith("linux") and bool(HOST_LIBS.match(_norm(dest).rsplit("/", 1)[-1]))
+    base = _norm(dest).rsplit("/", 1)[-1]
+    if sys.platform.startswith("linux"):
+        return bool(HOST_LIBS.match(base))
+    return sys.platform.startswith("win") and bool(WINDOWS_HOST_LIBS.match(base))
 
 
 def direct_imports(path: str) -> list[str]:
