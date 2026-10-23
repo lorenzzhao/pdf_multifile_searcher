@@ -83,6 +83,11 @@ Python (python-build-standalone)
   OpenSSL 3 (Apache-2.0), SQLite (public domain), libffi (MIT), libedit (BSD-3-Clause),
   ncurses (MIT/X11), xz/liblzma (0BSD), bzip2 (bzip2 license), zlib (Zlib),
   expat (MIT), mpdecimal (BSD-2-Clause), libuuid (BSD-3-Clause).
+  Code that CPython itself incorporates (among others expat, libmpdec, the HACL* hash
+  functions (MIT), the Mersenne Twister and BLAKE2 (CC0)) is listed in
+  licenses/python/CPython-<version>-incorporated-software.txt and HACL-LICENSE.txt; the
+  Unicode data of the unicodedata module is under the Unicode License
+  (Unicode-LICENSE.txt).
 
 PyInstaller
   The program launchers (pdf-multifile-searcher, pdf-multifile-search) are PyInstaller's
@@ -168,4 +173,5 @@ Version 1 of the program depended on PyMuPDF (AGPL-3.0 or commercial license fro
 Artifex Software). Version 2 no longer uses PyMuPDF. The standalone programs of version
 2.0.0 lacked the notices of the Python interpreter, of several Linux system libraries
 and of some Qt modules, and their release did not include the Qt source code; version
-2.0.1 corrects this.
+2.0.1 corrects this. Version 2.0.2 adds the notices of the code incorporated in CPython
+itself (expat and libmpdec on Windows, HACL* and others on both systems).

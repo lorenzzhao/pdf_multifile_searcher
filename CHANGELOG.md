@@ -3,6 +3,14 @@
 All notable changes to PDF Multifile Searcher are listed here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.0.2] - 2026-10-23
+
+### Fixed
+
+- The standalone programs now also contain the notices of the code that Python itself
+  incorporates (expat and libmpdec on Windows; HACL*, the Mersenne Twister and others
+  on all systems) and the Unicode License for the Unicode data in Python.
+
 ## [2.0.1] - 2026-10-23
 
 Corrects the license compliance of the standalone programs. The program itself is

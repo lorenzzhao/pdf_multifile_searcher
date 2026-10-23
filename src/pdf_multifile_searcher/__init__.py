@@ -10,4 +10,4 @@ APP_ID = "pdf-multifile-searcher"
 try:
     __version__ = version("pdf-multifile-searcher")
 except PackageNotFoundError:  # running from a source tree without installation
-    __version__ = "2.0.1"
+    __version__ = "2.0.2"

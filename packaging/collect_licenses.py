@@ -175,6 +175,16 @@ def python_license_files(python_dir: Path, bundle: Path, out: Path) -> list[tupl
         if not (python_dir / p).exists():
             raise SystemExit(f"Licence file listed in PYTHON.json is missing: {p}")
         result.append((python_dir / p, out / Path(p).name))
+    # Code that CPython itself incorporates (expat, libmpdec, HACL*, Mersenne Twister and
+    # others) is listed in CPython's Doc/license.rst, not in the archive's licence files.
+    stored = PACKAGING / "licenses" / "python"
+    version = sys.version.split()[0]
+    if not (stored / f"CPython-{version}-incorporated-software.txt").exists():
+        raise SystemExit(f"Missing Doc/license.rst of CPython {version} in {stored}")
+    for file in sorted(stored.iterdir()):
+        if file.name.startswith("CPython-") and version not in file.name:
+            continue
+        result.append((file, out / file.name))
     return result
 
 
