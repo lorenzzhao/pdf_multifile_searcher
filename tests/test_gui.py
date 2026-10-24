@@ -10,10 +10,11 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import Qt
 
-from pdf_multifile_searcher.config import ConfigStore, Settings
+from pdf_multifile_searcher.config import ConfigStore, Settings, WindowState
 from pdf_multifile_searcher.core.models import Match
 from pdf_multifile_searcher.gui.main_window import MainWindow
 from pdf_multifile_searcher.gui.results import COL_PAGE, MATCH_ROLE
+from pdf_multifile_searcher.gui.style import LIGHT, apply_theme
 
 
 @pytest.fixture
@@ -124,3 +125,32 @@ def test_settings_saved_on_close(qtbot, window: MainWindow, tmp_path: Path) -> N
     window.close()
     saved = ConfigStore(tmp_path / "settings.json", legacy_path=None).load()
     assert str(tmp_path) in saved.scopes
+
+
+@pytest.fixture
+def themed_app(qapp):
+    """The application styled as the program styles it, restored afterwards."""
+    style, palette, sheet = qapp.style().name(), qapp.palette(), qapp.styleSheet()
+    apply_theme(qapp, LIGHT)
+    yield qapp
+    qapp.setStyleSheet(sheet)
+    qapp.setPalette(palette)
+    qapp.setStyle(style)
+
+
+def test_maximized_start_logs_no_painter_warnings(
+    qtbot, qtlog, themed_app, tmp_path: Path, data_dir: Path
+) -> None:
+    # Maximized on the small offscreen screen, a saved wide left pane squeezes the viewer's
+    # tool buttons until Qt asks their icons for empty pixmaps. Painting those logged
+    # "QPainter::begin: Paint device returned engine == 0" and "Painter not active".
+    store = ConfigStore(tmp_path / "settings.json", legacy_path=None)
+    window_state = WindowState(maximized=True, sash=692, left_sizes=[210, 522])
+    settings = Settings(scopes=[str(data_dir)], use_cache=False, window=window_state)
+    win = MainWindow(store, settings)
+    qtbot.addWidget(win)
+    win.show()
+    qtbot.waitExposed(win)
+    qtbot.wait(200)
+    painter_messages = [r.message for r in qtlog.records if "Painter" in r.message]
+    assert painter_messages == []

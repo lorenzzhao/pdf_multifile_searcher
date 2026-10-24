@@ -109,6 +109,10 @@ class _TintedSvgEngine(QIconEngine):
         renderer.render(painter, QRectF(rect))
 
     def pixmap(self, size: QSize, mode: QIcon.Mode, state: QIcon.State) -> QPixmap:
+        # Qt asks for empty sizes too (e.g. laying out a maximized window offscreen); painting
+        # into the resulting null pixmap would only log QPainter warnings.
+        if size.isEmpty():
+            return QPixmap()
         pixmap = QPixmap(size)
         pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)
